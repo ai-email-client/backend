@@ -1,11 +1,12 @@
 from config import Config
 from fastapi import FastAPI
-from app.routers import auth
+from app.routers import auth, email
 import uvicorn
 
 app = FastAPI()
 
 app.include_router(auth.router)
+app.include_router(email.router)
 
 @app.get("/")
 def read_root():

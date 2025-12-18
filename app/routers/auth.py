@@ -26,7 +26,10 @@ async def login(provider: str):
     return RedirectResponse(url=auth_url)
 
 @router.get("/{provider}/callback")
-async def callback(provider: str, code: str):
+async def callback(
+    provider: str,
+    code: str
+):
     try:
         if provider == "gmail":
             provider_service = GmailProvider(config)
@@ -37,6 +40,6 @@ async def callback(provider: str, code: str):
         
         token_data = provider_service.exchange_code_for_token(code)
         
-        return {"message": "Login Successful", "token_data": token_data}
+        return {"provider": provider, "token_data": token_data}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
