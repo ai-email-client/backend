@@ -1,9 +1,9 @@
-import base64
 from typing import List, Dict, Any
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from config import Config
+from app.utility import get_email_body
 
 class GmailProvider:
     def __init__(self, config: Config):
@@ -112,7 +112,7 @@ class GmailProvider:
                         "subject": subject,
                         "sender": sender,
                         "snippet": snippet,
-                        "body": self._get_email_body(payload)
+                        "body": get_email_body(payload)
                     })
 
             return email_list
@@ -120,31 +120,4 @@ class GmailProvider:
         except Exception as e:
             raise Exception(f"Error fetching emails: {str(e)}")
 
-    def _get_email_body(self, payload: Dict[str, Any]) -> str:
-        if 'body' in payload and payload['body'].get('data'):
-            return self._decode_base64(payload['body']['data'])
-        
-        if 'parts' in payload:
-            for part in payload['parts']:
-                if part['mimeType'] == 'text/html':
-                    return self._get_email_body(part)
-                
-                if 'parts' in part:
-                    found_html = self._get_email_body(part)
-                    if found_html: 
-                        return found_html
-
-            for part in payload['parts']:
-                if part['mimeType'] == 'text/plain':
-                    return self._get_email_body(part)
-        
-        return "" 
-
-    def _decode_base64(self, data: str) -> str:
-        try:
-            padding = len(data) % 4
-            if padding:
-                data += '=' * (4 - padding)
-            return base64.urlsafe_b64decode(data).decode('utf-8')
-        except Exception:
-            return ""
+    
