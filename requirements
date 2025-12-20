@@ -1,4 +1,13 @@
 fastapi
-uvicorn[standard]
+uvicorn
+sqlalchemy
+psycopg2-binary
+google-api-python-client
+google-auth-oauthlib
+beautifulsoup4
 python-dotenv
+apscheduler
+requests
+httpx
 imap-tools
+pydantic
