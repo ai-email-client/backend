@@ -3,7 +3,7 @@ from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from config import Config
-from app.utility import get_email_body
+from app import utility
 
 class GmailProvider:
     def __init__(self, config: Config):
@@ -99,20 +99,20 @@ class GmailProvider:
             else:
                 for msg in messages:
                     txt = service.users().messages().get(userId='me', id=msg['id']).execute()
-                    
-                    payload = txt.get('payload', {})
-                    headers = payload.get('headers', [])
-                    subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
-                    sender = next((h['value'] for h in headers if h['name'] == 'From'), '(Unknown Sender)')
-                    snippet = txt.get('snippet', '')
+                    payload = utility.get_payload(txt)
 
+                    subject = utility.get_email_subject(payload)
+                    sender = utility.get_email_sender(payload)
+                    snippet = utility.get_email_snippet(txt)
 
+                    parts = utility.get_part_by_mimetype(payload, 'text/plain')
+                    plain_text = utility.get_plain_text(parts)
                     email_list.append({
                         "id": msg['id'],
                         "subject": subject,
                         "sender": sender,
                         "snippet": snippet,
-                        "body": get_email_body(payload)
+                        "html_text": utility.clean_text(plain_text)
                     })
 
             return email_list
@@ -120,4 +120,34 @@ class GmailProvider:
         except Exception as e:
             raise Exception(f"Error fetching emails: {str(e)}")
 
-    
+    def get_message_by_id(self, token_data: Dict[str, Any], message_id: str) -> Dict[str, Any]:
+        try:
+            creds = Credentials(
+                token=token_data.get('access_token'),
+                refresh_token=token_data.get('refresh_token'),
+                token_uri=token_data.get('token_uri'),
+                client_id=token_data.get('client_id'),
+                client_secret=token_data.get('client_secret'),
+                scopes=token_data.get('scopes')
+            )
+
+            service = build('gmail', 'v1', credentials=creds)
+
+            txt = service.users().messages().get(userId='me', id=message_id).execute()
+            
+            payload = txt.get('payload', {})
+            headers = payload.get('headers', [])
+            subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
+            sender = next((h['value'] for h in headers if h['name'] == 'From'), '(Unknown Sender)')
+            snippet = txt.get('snippet', '')
+
+            return {
+                "id": message_id,
+                "subject": subject,
+                "sender": sender,
+                "snippet": snippet,
+                "body": utility.get_email_body(payload)
+            }
+
+        except Exception as e:
+            raise Exception(f"Error fetching message by id: {str(e)}")
