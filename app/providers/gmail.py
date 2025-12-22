@@ -8,35 +8,34 @@ from config import Config
 class GmailProvider:
     def __init__(self, config: Config):
         self.config = config
-        self.scopes = [
-            'https://www.googleapis.com/auth/gmail.readonly',
-            'https://www.googleapis.com/auth/gmail.modify',
-            'https://www.googleapis.com/auth/gmail.compose',
-            'https://www.googleapis.com/auth/gmail.send',
-            'https://www.googleapis.com/auth/gmail.insert',
-            'https://www.googleapis.com/auth/gmail.labels',
-            'https://www.googleapis.com/auth/gmail.settings.basic',
-            'https://www.googleapis.com/auth/gmail.settings.sharing',
-            'https://www.googleapis.com/auth/userinfo.email',
-            'https://www.googleapis.com/auth/userinfo.profile',
-            'openid'
-        ]
-
+        self.scopes = ['https://mail.google.com/', 'openid']
+        
+    def build_service(self, token: Dict[str, Any]):
+        creds = Credentials(
+            token=token.get('access_token'),
+            refresh_token=token.get('refresh_token'),
+            token_uri=self.config.GOOGLE_TOKEN_URI,
+            client_id=self.config.GOOGLE_CLIENT_ID,
+            client_secret=self.config.GOOGLE_CLIENT_SECRET,
+            scopes=self.scopes
+        )
+        return build('gmail', 'v1', credentials=creds)
+    
     def login(self):
         flow = Flow.from_client_config(
             client_config={
                 "web": {
                     "client_id": self.config.GOOGLE_CLIENT_ID,
                     "client_secret": self.config.GOOGLE_CLIENT_SECRET,
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://accounts.google.com/o/oauth2/token",
+                    "auth_uri": self.config.GOOGLE_AUTH_URI,
+                    "token_uri": self.config.GOOGLE_TOKEN_URI,
                     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
                     "client_name": "Google",
-                    "redirect_uris": ["http://localhost:8000/auth/gmail/callback"]
+                    "redirect_uris": [self.config.GOOGLE_REDIRECT_URI]
                 }
             },
             scopes=self.scopes,
-            redirect_uri="http://localhost:8000/auth/gmail/callback"
+            redirect_uri=self.config.GOOGLE_REDIRECT_URI
         )
         
         authorization_url, state = flow.authorization_url(
@@ -51,18 +50,18 @@ class GmailProvider:
             "web": {
                 "client_id": self.config.GOOGLE_CLIENT_ID,
                 "client_secret": self.config.GOOGLE_CLIENT_SECRET,
-                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://accounts.google.com/o/oauth2/token",
+                "auth_uri": self.config.GOOGLE_AUTH_URI,
+                "token_uri": self.config.GOOGLE_TOKEN_URI,
                 "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
                 "client_name": "Google",
-                "redirect_uris": ["http://localhost:8000/auth/gmail/callback"]
+                "redirect_uris": [self.config.GOOGLE_REDIRECT_URI]
             }
         }
 
         flow = Flow.from_client_config(
             client_config=client_config,
             scopes=self.scopes,
-            redirect_uri="http://localhost:8000/auth/gmail/callback"
+            redirect_uri=self.config.GOOGLE_REDIRECT_URI
         )
 
         flow.fetch_token(code=code)
@@ -70,25 +69,12 @@ class GmailProvider:
 
         return {
             'access_token': creds.token,
-            'refresh_token': creds.refresh_token,
-            'token_uri': creds.token_uri,
-            'client_id': creds.client_id,
-            'client_secret': creds.client_secret,
-            'scopes': creds.scopes
+            'refresh_token': creds.refresh_token
         }
 
     def fetch_emails(self, token_data: Dict[str, Any], limit: int = 5) -> List[Dict[str, Any]]:
         try:
-            creds = Credentials(
-                token=token_data.get('access_token'),
-                refresh_token=token_data.get('refresh_token'),
-                token_uri=token_data.get('token_uri'),
-                client_id=token_data.get('client_id'),
-                client_secret=token_data.get('client_secret'),
-                scopes=token_data.get('scopes')
-            )
-
-            service = build('gmail', 'v1', credentials=creds)
+            service = self.build_service(token_data)
 
             results = service.users().messages().list(userId='me', maxResults=limit).execute()
             messages = results.get('messages', [])
