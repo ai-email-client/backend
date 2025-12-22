@@ -105,14 +105,11 @@ class GmailProvider:
                     sender = utility.get_email_sender(payload)
                     snippet = utility.get_email_snippet(txt)
 
-                    parts = utility.get_part_by_mimetype(payload, 'text/plain')
-                    plain_text = utility.get_plain_text(parts)
                     email_list.append({
                         "id": msg['id'],
                         "subject": subject,
                         "sender": sender,
                         "snippet": snippet,
-                        "html_text": utility.clean_text(plain_text)
                     })
 
             return email_list
@@ -134,19 +131,21 @@ class GmailProvider:
             service = build('gmail', 'v1', credentials=creds)
 
             txt = service.users().messages().get(userId='me', id=message_id).execute()
-            
-            payload = txt.get('payload', {})
-            headers = payload.get('headers', [])
-            subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
-            sender = next((h['value'] for h in headers if h['name'] == 'From'), '(Unknown Sender)')
-            snippet = txt.get('snippet', '')
+            payload = utility.get_payload(txt)
+
+            subject = utility.get_email_subject(payload)
+            sender = utility.get_email_sender(payload)
+            snippet = utility.get_email_snippet(txt)
+
+            parts = utility.get_email_parts(payload)
+            plain_text = utility.get_plain_text(parts)
 
             return {
                 "id": message_id,
                 "subject": subject,
                 "sender": sender,
                 "snippet": snippet,
-                "body": utility.get_email_body(payload)
+                "body": utility.clean_text(plain_text)
             }
 
         except Exception as e:
