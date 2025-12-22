@@ -10,3 +10,5 @@ class Config:
         self.GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
         self.GOOGLE_AUTH_URI = os.getenv("GOOGLE_AUTH_URI")
         self.GOOGLE_TOKEN_URI = os.getenv("GOOGLE_TOKEN_URI")
+        
+        self.DATABASE_URL = os.getenv("DATABASE_URL")

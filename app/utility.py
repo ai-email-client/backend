@@ -52,14 +52,14 @@ def get_email_snippet(payload: Dict[str, Any]) -> str:
     return ''
 
 def get_payload(txt: Dict[str, Any]) -> Dict[str, Any]:
-    payload = txt.get('payload', {})
+    payload = txt['payload']
     return payload
 
 def get_email_parts(payload: Dict[str, Any]) -> Dict[str, Any]:
-    return payload.get('parts', {})
+    return payload['parts']
 
 def get_part_by_mimetype(payload: Dict[str, Any], target_mimetype: str) -> Optional[Dict[str, Any]]:
-    if payload.get('mimeType') == target_mimetype:
+    if payload['mimeType'] == target_mimetype:
         if 'body' in payload and payload['body'].get('data'):
             return payload
 
@@ -71,14 +71,8 @@ def get_part_by_mimetype(payload: Dict[str, Any], target_mimetype: str) -> Optio
     
     return None
 
-def get_plain_text(parts: Dict[str, Any]) -> Optional[str]:
-    if parts.get('mimeType') == 'text/plain':
-        if 'body' in parts and parts['body'].get('data'):
-            return decode_base64(parts['body']['data'])
-    return None
-
-def get_html_text(parts: Dict[str, Any]) -> Optional[str]:
-    if parts.get('mimeType') == 'text/html':
+def get_decode_by_mimetype(parts: Dict[str, Any], target_mimetype: str) -> Optional[str]:
+    if parts['mimeType'] == target_mimetype:
         if 'body' in parts and parts['body'].get('data'):
             return decode_base64(parts['body']['data'])
     return None
