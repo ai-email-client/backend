@@ -17,7 +17,7 @@ class EmailAccountResponse(BaseModel):
 class EmailFetchRequest(BaseModel):
     provider: str
     token_data: Dict[str, Any]
-    limit: int = 50
+    limit: Optional[int] = 50
 
 class EmailMessageRequest(BaseModel):
     provider: str
@@ -40,3 +40,7 @@ class EmailDetailResponse(BaseModel):
     sender: str
     snippet: str
     body: str
+    time: str
+    unread: bool
+    tag: str
+    starred: bool

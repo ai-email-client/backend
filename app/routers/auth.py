@@ -12,7 +12,7 @@ router = APIRouter(
 
 config = Config()
 
-@router.get("/{provider}/login")
+@router.get("/login/{provider}")
 async def login(provider: str):
     if provider == "gmail":
         provider_service = GmailProvider(config)
@@ -25,7 +25,7 @@ async def login(provider: str):
     
     return RedirectResponse(url=auth_url)
 
-@router.get("/{provider}/callback")
+@router.get("/callback/{provider}")
 async def callback(
     provider: str,
     code: str
@@ -39,7 +39,12 @@ async def callback(
             raise HTTPException(status_code=400, detail="Invalid provider")
         
         token_data = provider_service.exchange_code_for_token(code)
+
+        access_token = token_data['access_token']
+        refresh_token = token_data['refresh_token']
+
+        url = f"http://localhost:5173/#/?provider={provider}&access_token={access_token}&refresh_token={refresh_token}"
         
-        return {"provider": provider, "token_data": token_data}
+        return RedirectResponse(url=url, status_code=302)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

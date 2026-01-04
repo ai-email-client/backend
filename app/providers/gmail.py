@@ -116,16 +116,51 @@ class GmailProvider:
             snippet = utility.get_email_snippet(result)
 
             parts = utility.get_email_parts(payload)
-            code = utility.get_part_by_mimetype(payload, 'text/plain')
-            plain_text = utility.get_decode_by_mimetype(code, 'text/plain')
+            code = utility.get_part_by_mimetype(payload, 'text/html')
+            body = utility.get_decode_by_mimetype(code, 'text/html')
 
             return EmailDetailResponse(
                 id=req.message_id,
                 subject=subject,
                 sender=sender,
                 snippet=snippet,
-                body=utility.clean_text(plain_text)
+                body=body,
+                time="",
+                unread=False,
+                tag="",
+                starred=False
             )
 
         except Exception as e:
             raise Exception(f"Error function get_message_by_id: {str(e)}")
+    
+    def get_inbox(self, req: EmailFetchRequest) -> List[EmailShortResponse]:
+        try:
+            service = self.build_service(req.token_data)
+
+            results = service.users().messages().list(userId='me', maxResults=req.limit).execute()
+            messages = results.get('messages', [])
+
+            email_list = []
+            if not messages:
+                print("No messages found.")
+            else:
+                for msg in messages:
+                    txt = service.users().messages().get(userId='me', id=msg['id']).execute()
+                    payload = utility.get_payload(txt)
+
+                    subject = utility.get_email_subject(payload)
+                    sender = utility.get_email_sender(payload)
+                    snippet = utility.get_email_snippet(txt)
+
+                    email_list.append(EmailShortResponse(
+                        id=msg['id'],
+                        subject=subject,
+                        sender=sender,
+                        snippet=snippet,
+                    ))
+
+            return email_list
+
+        except Exception as e:
+            raise Exception(f"Error function get_inbox: {str(e)}")

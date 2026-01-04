@@ -53,3 +53,22 @@ async def get_message_by_id(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/inbox")
+async def get_inbox(
+    EmailFetchRequest: EmailFetchRequest
+):
+    try:
+        if EmailFetchRequest.provider == "gmail":
+            provider_service = GmailProvider(config)
+        elif EmailFetchRequest.provider == "outlook":
+            provider_service = OutlookProvider(config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+
+        inbox = provider_service.get_inbox(EmailFetchRequest)
+        
+        return inbox
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
