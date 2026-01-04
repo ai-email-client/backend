@@ -1,6 +1,12 @@
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 
+class Attachment(BaseModel):
+    filename: str
+    mimeType: str
+    size: int
+    attachmentId: Optional[str] = None
+    
 class EmailAccountCreate(BaseModel):
     email: str
     provider: str
@@ -41,6 +47,5 @@ class EmailDetailResponse(BaseModel):
     snippet: str
     body: str
     time: str
-    unread: bool
-    tag: str
-    starred: bool
+    tag: List[str]
+    attachments: List[Attachment]

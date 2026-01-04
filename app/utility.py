@@ -1,6 +1,7 @@
 import base64
 import re
-from typing import Dict, Any, Optional
+import datetime
+from typing import Dict, Any, Optional, List
 from bs4 import BeautifulSoup
 
 def decode_base64(data: str) -> str:
@@ -32,31 +33,15 @@ def clean_text(text: str) -> str:
     
     return text.strip()
 
-def get_email_subject(payload: Dict[str, Any]) -> str:
+def convert_timestamp_to_date(timestamp: int) -> str:
+    return datetime.datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S')
+
+def get_email_header(payload: Dict[str, Any], header_name: str) -> str:
     if 'headers' in payload:
         for header in payload['headers']:
-            if header['name'] == 'Subject':
+            if header['name'] == header_name:
                 return header['value']
     return ''
-
-def get_email_sender(payload: Dict[str, Any]) -> str:
-    if 'headers' in payload:
-        for header in payload['headers']:
-            if header['name'] == 'From':
-                return header['value']
-    return ''
-
-def get_email_snippet(payload: Dict[str, Any]) -> str:
-    if 'snippet' in payload:
-        return payload['snippet']
-    return ''
-
-def get_payload(txt: Dict[str, Any]) -> Dict[str, Any]:
-    payload = txt['payload']
-    return payload
-
-def get_email_parts(payload: Dict[str, Any]) -> Dict[str, Any]:
-    return payload['parts']
 
 def get_part_by_mimetype(payload: Dict[str, Any], target_mimetype: str) -> Optional[Dict[str, Any]]:
     if payload['mimeType'] == target_mimetype:
@@ -70,6 +55,26 @@ def get_part_by_mimetype(payload: Dict[str, Any], target_mimetype: str) -> Optio
                 return found
     
     return None
+
+def get_attachments(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    attachments = []
+    parts = payload.get('parts', [])
+    
+    for part in parts:
+        # 1. เก็บไฟล์แนบ
+        if part.get('filename'):
+            attachments.append({
+                "filename": part.get('filename'),
+                "mimeType": part.get('mimeType'),
+                "size": part.get('body', {}).get('size', 0),
+                "attachmentId": part.get('body', {}).get('attachmentId')
+            })
+        
+        # 2. Recursive: แก้ตรงนี้! 
+        # ส่ง 'part' (Dict) เข้าไป ไม่ใช่ 'part["parts"]' (List)
+        if 'parts' in part:
+            attachments.extend(get_attachments(part))
+    return attachments
 
 def get_decode_by_mimetype(parts: Dict[str, Any], target_mimetype: str) -> Optional[str]:
     if parts['mimeType'] == target_mimetype:

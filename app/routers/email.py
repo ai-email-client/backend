@@ -33,7 +33,8 @@ async def fetch_emails(
         return {"count": len(emails), "emails": emails}
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
 
 @router.post("/message")
 async def get_message_by_id(
@@ -52,7 +53,8 @@ async def get_message_by_id(
         return message
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
 
 @router.get("/inbox")
 async def get_inbox(
@@ -71,4 +73,5 @@ async def get_inbox(
         return inbox
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))

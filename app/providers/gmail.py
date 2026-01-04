@@ -4,7 +4,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from config import Config
 from app import utility
-from app.schemas.email import EmailShortResponse, EmailDetailResponse, EmailFetchRequest, EmailMessageRequest
+from app.schemas.email import EmailShortResponse, Attachment, EmailDetailResponse, EmailFetchRequest, EmailMessageRequest
 
 class GmailProvider:
     def __init__(self, config: Config):
@@ -85,15 +85,16 @@ class GmailProvider:
                 print("No messages found.")
             else:
                 for msg in messages:
-                    txt = service.users().messages().get(userId='me', id=msg['id']).execute()
-                    payload = utility.get_payload(txt)
+                    results = service.users().messages().get(userId='me', id=msg['id']).execute()
+                    payload = results['payload']
 
-                    subject = utility.get_email_subject(payload)
-                    sender = utility.get_email_sender(payload)
-                    snippet = utility.get_email_snippet(txt)
+                    message_id = results['id']
+                    subject = utility.get_email_header(payload, 'Subject')
+                    sender = utility.get_email_header(payload, 'From')
+                    snippet = results['snippet']
 
                     email_list.append(EmailShortResponse(
-                        id=msg['id'],
+                        id=message_id,
                         subject=subject,
                         sender=sender,
                         snippet=snippet,
@@ -109,26 +110,25 @@ class GmailProvider:
             service = self.build_service(req.token_data)
 
             result = service.users().messages().get(userId='me',id=req.message_id).execute()
-            payload = utility.get_payload(result)
+            payload = result['payload']
+            subject = utility.get_email_header(payload, 'Subject')
+            sender = utility.get_email_header(payload, 'From')
+            snippet = result['snippet']
+            time = utility.convert_timestamp_to_date(int(result['internalDate']))
+            tags = result['labelIds']
 
-            subject = utility.get_email_subject(payload)
-            sender = utility.get_email_sender(payload)
-            snippet = utility.get_email_snippet(result)
-
-            parts = utility.get_email_parts(payload)
-            code = utility.get_part_by_mimetype(payload, 'text/html')
-            body = utility.get_decode_by_mimetype(code, 'text/html')
+            body = utility.get_part_by_mimetype(payload, 'text/html')
+            attachments = utility.get_attachments(payload)
 
             return EmailDetailResponse(
                 id=req.message_id,
                 subject=subject,
                 sender=sender,
                 snippet=snippet,
-                body=body,
-                time="",
-                unread=False,
-                tag="",
-                starred=False
+                body=utility.get_decode_by_mimetype(body, 'text/html'),
+                time=time,
+                tag=tags,
+                attachments=attachments
             )
 
         except Exception as e:
