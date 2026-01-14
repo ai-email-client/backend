@@ -6,10 +6,19 @@ class UserBase(BaseModel):
     password: str
     name: str
 
-class UserResponse(BaseModel):
-    username: str
-    name: str
-    email_accounts: List[EmailAccountResponse] = []
+## TODO: 
+# 1. User can have many email accounts
+# 2. User should have a default email account
 
-    class Config:
-        from_attributes = True
+# class UserProfile(BaseModel):
+#     username: str
+#     name: str
+#     email_accounts: List[EmailAccountResponse] = []
+
+# class UserResponse(BaseModel):
+#     username: str
+#     name: str
+#     email_accounts: List[EmailAccountResponse] = []
+
+#     class Config:
+#         from_attributes = True

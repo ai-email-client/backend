@@ -1,9 +1,10 @@
-import base64
 from typing import List, Dict, Any
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from config import Config
+from app import utility
+from app.schemas.email import EmailShortResponse, Attachment, EmailDetailResponse, EmailFetchRequest, EmailMessageRequest
 
 class GmailProvider:
     def __init__(self, config: Config):
@@ -66,17 +67,82 @@ class GmailProvider:
 
         flow.fetch_token(code=code)
         creds = flow.credentials
-
+        # // TODO: Save Refresh Token To Database and Use from Database
         return {
             'access_token': creds.token,
             'refresh_token': creds.refresh_token
         }
 
-    def fetch_emails(self, token_data: Dict[str, Any], limit: int = 5) -> List[Dict[str, Any]]:
+    def fetch_emails(self, req: EmailFetchRequest) -> List[EmailShortResponse]:
         try:
-            service = self.build_service(token_data)
+            service = self.build_service(req.token_data)
 
-            results = service.users().messages().list(userId='me', maxResults=limit).execute()
+            results = service.users().messages().list(userId='me', maxResults=req.limit).execute()
+            messages = results.get('messages', [])
+
+            email_list = []
+            if not messages:
+                print("No messages found.")
+            else:
+                for msg in messages:
+                    results = service.users().messages().get(userId='me', id=msg['id']).execute()
+                    payload = results['payload']
+
+                    message_id = results['id']
+                    subject = utility.get_email_header(payload, 'Subject')
+                    sender = utility.get_email_header(payload, 'From')
+                    snippet = results['snippet']
+
+                    email_list.append(EmailShortResponse(
+                        msg_id=message_id,
+                        subject=subject,
+                        sender=sender,
+                        snippet=snippet,
+                        time=utility.convert_timestamp_to_date(int(results['internalDate'])),
+                        tag=results['labelIds'],
+                        attachments=utility.get_attachments(payload)
+                    ))
+
+            return email_list
+
+        except Exception as e:
+            raise Exception(f"Error function fetch_emails: {str(e)}")
+
+    def get_message_by_id(self, req: EmailMessageRequest) -> EmailDetailResponse:
+        try:
+            service = self.build_service(req.token_data)
+
+            result = service.users().messages().get(userId='me',id=req.message_id).execute()
+            payload = result['payload']
+            subject = utility.get_email_header(payload, 'Subject')
+            sender = utility.get_email_header(payload, 'From')
+            snippet = result['snippet']
+            time = utility.convert_timestamp_to_date(int(result['internalDate']))
+            tags = result['labelIds']
+
+            body = utility.get_part_by_mimetype(payload, 'text/html')
+            attachments = utility.get_attachments(payload)
+
+            return EmailDetailResponse(
+                msg_id=req.message_id,
+                subject=subject,
+                sender=sender,
+                snippet=snippet,
+                body=utility.get_decode_by_mimetype(body, 'text/html'),
+                time=time,
+                tag=tags,
+                attachments=attachments,
+                plain_text=utility.get_decode_by_mimetype(body, 'text/plain')
+            )
+
+        except Exception as e:
+            raise Exception(f"Error function get_message_by_id: {str(e)}")
+    
+    def get_inbox(self, req: EmailFetchRequest) -> List[EmailShortResponse]:
+        try:
+            service = self.build_service(req.token_data)
+
+            results = service.users().messages().list(userId='me', maxResults=req.limit).execute()
             messages = results.get('messages', [])
 
             email_list = []
@@ -85,52 +151,20 @@ class GmailProvider:
             else:
                 for msg in messages:
                     txt = service.users().messages().get(userId='me', id=msg['id']).execute()
-                    
-                    payload = txt.get('payload', {})
-                    headers = payload.get('headers', [])
-                    subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
-                    sender = next((h['value'] for h in headers if h['name'] == 'From'), '(Unknown Sender)')
-                    snippet = txt.get('snippet', '')
+                    payload = utility.get_payload(txt)
 
+                    subject = utility.get_email_subject(payload)
+                    sender = utility.get_email_sender(payload)
+                    snippet = utility.get_email_snippet(txt)
 
-                    email_list.append({
-                        "id": msg['id'],
-                        "subject": subject,
-                        "sender": sender,
-                        "snippet": snippet,
-                        "body": self._get_email_body(payload)
-                    })
+                    email_list.append(EmailShortResponse(
+                        msg_id=msg['id'],
+                        subject=subject,
+                        sender=sender,
+                        snippet=snippet,
+                    ))
 
             return email_list
 
         except Exception as e:
-            raise Exception(f"Error fetching emails: {str(e)}")
-
-    def _get_email_body(self, payload: Dict[str, Any]) -> str:
-        if 'body' in payload and payload['body'].get('data'):
-            return self._decode_base64(payload['body']['data'])
-        
-        if 'parts' in payload:
-            for part in payload['parts']:
-                if part['mimeType'] == 'text/html':
-                    return self._get_email_body(part)
-                
-                if 'parts' in part:
-                    found_html = self._get_email_body(part)
-                    if found_html: 
-                        return found_html
-
-            for part in payload['parts']:
-                if part['mimeType'] == 'text/plain':
-                    return self._get_email_body(part)
-        
-        return "" 
-
-    def _decode_base64(self, data: str) -> str:
-        try:
-            padding = len(data) % 4
-            if padding:
-                data += '=' * (4 - padding)
-            return base64.urlsafe_b64decode(data).decode('utf-8')
-        except Exception:
-            return ""
+            raise Exception(f"Error function get_inbox: {str(e)}")
