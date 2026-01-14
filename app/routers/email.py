@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Body
-from app.providers.gmail import GmailProvider
 from config import Config
 from typing import Dict, Any
-from app.schemas.email import EmailFetchRequest, EmailMessageRequest
+from app.schemas.email import EmailFetchRequest, EmailMessageRequest, EmailSummaryRequest
+from app.services.email import EmailService
 
 router = APIRouter(
     prefix="/email",
@@ -16,21 +16,9 @@ async def fetch_emails(
     EmailFetchRequest: EmailFetchRequest
 ):
     try:
-        if EmailFetchRequest.provider == "gmail":
-            provider_service = GmailProvider(config)
-        elif EmailFetchRequest.provider == "outlook":
-            provider_service = OutlookProvider(config)
-        else:
-            raise HTTPException(status_code=400, detail="Invalid provider")
+        email_service = EmailService(config)
 
-        if EmailFetchRequest.limit is None:
-            limit = 5
-        else:
-            limit = EmailFetchRequest.limit
-
-        emails = provider_service.fetch_emails(EmailFetchRequest)
-        
-        return {"count": len(emails), "emails": emails}
+        return email_service.fetch_emails(EmailFetchRequest)
         
     except Exception as e:
         print(e)
@@ -41,16 +29,9 @@ async def get_message_by_id(
     EmailMessageRequest: EmailMessageRequest
 ):
     try:
-        if EmailMessageRequest.provider == "gmail":
-            provider_service = GmailProvider(config)
-        elif EmailMessageRequest.provider == "outlook":
-            provider_service = OutlookProvider(config)
-        else:
-            raise HTTPException(status_code=400, detail="Invalid provider")
+        email_service = EmailService(config)
 
-        message = provider_service.get_message_by_id(EmailMessageRequest)
-        
-        return message
+        return email_service.get_message_by_id(EmailMessageRequest)
         
     except Exception as e:
         print(e)
@@ -61,16 +42,22 @@ async def get_inbox(
     EmailFetchRequest: EmailFetchRequest
 ):
     try:
-        if EmailFetchRequest.provider == "gmail":
-            provider_service = GmailProvider(config)
-        elif EmailFetchRequest.provider == "outlook":
-            provider_service = OutlookProvider(config)
-        else:
-            raise HTTPException(status_code=400, detail="Invalid provider")
+        email_service = EmailService(config)
 
-        inbox = provider_service.get_inbox(EmailFetchRequest)
+        return email_service.get_inbox(EmailFetchRequest)
         
-        return inbox
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/summary")
+async def get_summary(
+    EmailSummaryRequest: EmailSummaryRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        return email_service.get_summary(EmailSummaryRequest)
         
     except Exception as e:
         print(e)

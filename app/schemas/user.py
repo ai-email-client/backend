@@ -6,6 +6,11 @@ class UserBase(BaseModel):
     password: str
     name: str
 
+class UserProfile(BaseModel):
+    username: str
+    name: str
+    email_accounts: List[EmailAccountResponse] = []
+
 class UserResponse(BaseModel):
     username: str
     name: str

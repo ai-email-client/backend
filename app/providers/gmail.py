@@ -94,7 +94,7 @@ class GmailProvider:
                     snippet = results['snippet']
 
                     email_list.append(EmailShortResponse(
-                        id=message_id,
+                        msg_id=message_id,
                         subject=subject,
                         sender=sender,
                         snippet=snippet,
@@ -121,7 +121,7 @@ class GmailProvider:
             attachments = utility.get_attachments(payload)
 
             return EmailDetailResponse(
-                id=req.message_id,
+                msg_id=req.message_id,
                 subject=subject,
                 sender=sender,
                 snippet=snippet,
@@ -154,7 +154,7 @@ class GmailProvider:
                     snippet = utility.get_email_snippet(txt)
 
                     email_list.append(EmailShortResponse(
-                        id=msg['id'],
+                        msg_id=msg['id'],
                         subject=subject,
                         sender=sender,
                         snippet=snippet,

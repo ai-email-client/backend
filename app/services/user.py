@@ -16,5 +16,5 @@ class UserService:
     def logout(self):
         pass
 
-    def get_emails(self):
+    def get_profile(self):
         pass

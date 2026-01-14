@@ -25,13 +25,34 @@ class EmailFetchRequest(BaseModel):
     token_data: Dict[str, Any]
     limit: Optional[int] = 50
 
+class EmailSummaryRequest(BaseModel):
+    inputs: List[Dict[str, Any]]
+    user: str="frontend-test"
+    response_mode: str
+
+class Sender(BaseModel):
+    name: str
+    type: str
+
+class EmailSummaryResponse(BaseModel):
+    sender: Sender
+    email_category: str
+    date: str
+    time: str
+    location: str
+    instructions: Optional[List[str]] = None
+    required_items: Optional[List[str]] = None
+    summary: str
+    extraction_status: str
+    confidence: float
+    
 class EmailMessageRequest(BaseModel):
     provider: str
     token_data: Dict[str, Any]
     message_id: str
 
 class EmailShortResponse(BaseModel):
-    id: str
+    msg_id: str
     subject: str
     sender: str
     snippet: str
@@ -41,7 +62,7 @@ class EmailFetchResponse(BaseModel):
     emails: List[EmailShortResponse]
 
 class EmailDetailResponse(BaseModel):
-    id: str
+    msg_id: str
     subject: str
     sender: str
     snippet: str
