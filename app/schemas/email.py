@@ -26,7 +26,10 @@ class EmailFetchRequest(BaseModel):
     limit: Optional[int] = 50
 
 class EmailSummaryRequest(BaseModel):
-    inputs: List[Dict[str, Any]]
+    email_text: str
+
+class DifySummaryRequest(BaseModel):
+    inputs: EmailSummaryRequest
     user: str="frontend-test"
     response_mode: str
 
@@ -56,6 +59,9 @@ class EmailShortResponse(BaseModel):
     subject: str
     sender: str
     snippet: str
+    time: str
+    tag: List[str]
+    attachments: List[Attachment]
 
 class EmailFetchResponse(BaseModel):
     count: int
@@ -70,3 +76,4 @@ class EmailDetailResponse(BaseModel):
     time: str
     tag: List[str]
     attachments: List[Attachment]
+    plain_text: Optional[str] = None

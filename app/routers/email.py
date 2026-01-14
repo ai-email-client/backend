@@ -13,12 +13,12 @@ config = Config()
 
 @router.post("/fetch")
 async def fetch_emails(
-    EmailFetchRequest: EmailFetchRequest
+    req: EmailFetchRequest
 ):
     try:
         email_service = EmailService(config)
 
-        return email_service.fetch_emails(EmailFetchRequest)
+        return email_service.fetch_emails(req)
         
     except Exception as e:
         print(e)
@@ -26,12 +26,12 @@ async def fetch_emails(
 
 @router.post("/message")
 async def get_message_by_id(
-    EmailMessageRequest: EmailMessageRequest
+    req: EmailMessageRequest
 ):
     try:
         email_service = EmailService(config)
 
-        return email_service.get_message_by_id(EmailMessageRequest)
+        return email_service.get_message_by_id(req)
         
     except Exception as e:
         print(e)
@@ -39,12 +39,12 @@ async def get_message_by_id(
 
 @router.get("/inbox")
 async def get_inbox(
-    EmailFetchRequest: EmailFetchRequest
+    req: EmailFetchRequest
 ):
     try:
         email_service = EmailService(config)
 
-        return email_service.get_inbox(EmailFetchRequest)
+        return email_service.get_inbox(req)
         
     except Exception as e:
         print(e)
@@ -52,12 +52,12 @@ async def get_inbox(
 
 @router.post("/summary")
 async def get_summary(
-    EmailSummaryRequest: EmailSummaryRequest
+    req: EmailSummaryRequest
 ):
     try:
         email_service = EmailService(config)
 
-        return email_service.get_summary(EmailSummaryRequest)
+        return email_service.get_summary(req)
         
     except Exception as e:
         print(e)

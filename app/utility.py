@@ -81,3 +81,21 @@ def get_decode_by_mimetype(parts: Dict[str, Any], target_mimetype: str) -> Optio
         if 'body' in parts and parts['body'].get('data'):
             return decode_base64(parts['body']['data'])
     return None
+
+def html_to_text(html_content: str) -> str:
+    if not html_content:
+        return ""
+
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    for element in soup(["script", "style", "head", "title", "meta", "[document]"]):
+        element.extract()
+
+    text = soup.get_text(separator=' ')
+
+    lines = (line.strip() for line in text.splitlines())
+    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+    text = '\n'.join(chunk for chunk in chunks if chunk)
+
+    return text
+

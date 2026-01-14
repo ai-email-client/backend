@@ -98,6 +98,9 @@ class GmailProvider:
                         subject=subject,
                         sender=sender,
                         snippet=snippet,
+                        time=utility.convert_timestamp_to_date(int(results['internalDate'])),
+                        tag=results['labelIds'],
+                        attachments=utility.get_attachments(payload)
                     ))
 
             return email_list
@@ -128,7 +131,8 @@ class GmailProvider:
                 body=utility.get_decode_by_mimetype(body, 'text/html'),
                 time=time,
                 tag=tags,
-                attachments=attachments
+                attachments=attachments,
+                plain_text=utility.get_decode_by_mimetype(body, 'text/plain')
             )
 
         except Exception as e:
