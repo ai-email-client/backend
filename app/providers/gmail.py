@@ -4,7 +4,14 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from config import Config
 from app import utility
-from app.schemas.email import EmailShortResponse, Attachment, EmailDetailResponse, EmailFetchRequest, EmailMessageRequest
+
+from app.schemas.email import (
+    EmailShortResponse, 
+    Attachment, 
+    EmailDetailResponse, 
+    EmailFetchRequest, 
+    EmailMessageRequest
+)
 
 class GmailProvider:
     def __init__(self, config: Config):
@@ -77,7 +84,13 @@ class GmailProvider:
         try:
             service = self.build_service(req.token_data)
 
-            results = service.users().messages().list(userId='me', maxResults=req.limit).execute()
+            results = service.users().messages().list(
+                userId='me', 
+                maxResults=req.limit,
+                labelIds=req.label,
+                pageToken=req.page_token
+                ).execute()
+            page_token = results.get('nextPageToken')
             messages = results.get('messages', [])
 
             email_list = []
@@ -103,7 +116,10 @@ class GmailProvider:
                         attachments=utility.get_attachments(payload)
                     ))
 
-            return email_list
+            return {
+                'emails': email_list,
+                'page_token': page_token
+            }
 
         except Exception as e:
             raise Exception(f"Error function fetch_emails: {str(e)}")
@@ -138,33 +154,3 @@ class GmailProvider:
         except Exception as e:
             raise Exception(f"Error function get_message_by_id: {str(e)}")
     
-    def get_inbox(self, req: EmailFetchRequest) -> List[EmailShortResponse]:
-        try:
-            service = self.build_service(req.token_data)
-
-            results = service.users().messages().list(userId='me', maxResults=req.limit).execute()
-            messages = results.get('messages', [])
-
-            email_list = []
-            if not messages:
-                print("No messages found.")
-            else:
-                for msg in messages:
-                    txt = service.users().messages().get(userId='me', id=msg['id']).execute()
-                    payload = utility.get_payload(txt)
-
-                    subject = utility.get_email_subject(payload)
-                    sender = utility.get_email_sender(payload)
-                    snippet = utility.get_email_snippet(txt)
-
-                    email_list.append(EmailShortResponse(
-                        msg_id=msg['id'],
-                        subject=subject,
-                        sender=sender,
-                        snippet=snippet,
-                    ))
-
-            return email_list
-
-        except Exception as e:
-            raise Exception(f"Error function get_inbox: {str(e)}")

@@ -44,7 +44,8 @@ async def callback(
         refresh_token = token_data['refresh_token']
 
         url = f"http://localhost:5173/#/?provider={provider}&access_token={access_token}&refresh_token={refresh_token}"
-        
+        print(access_token)
+        print(refresh_token)
         return RedirectResponse(url=url, status_code=302)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

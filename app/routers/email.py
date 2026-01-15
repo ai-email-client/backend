@@ -1,7 +1,13 @@
 from fastapi import APIRouter, HTTPException, Body
 from config import Config
 from typing import Dict, Any
-from app.schemas.email import EmailFetchRequest, EmailMessageRequest, EmailSummaryRequest
+
+from app.schemas.email import (
+    EmailFetchRequest, 
+    EmailMessageRequest, 
+    EmailSummaryRequest
+)
+
 from app.services.email import EmailService
 
 router = APIRouter(
@@ -31,20 +37,9 @@ async def get_message_by_id(
     try:
         email_service = EmailService(config)
 
-        return email_service.get_message_by_id(req)
-        
-    except Exception as e:
-        print(e)
-        return HTTPException(status_code=500, detail=str(e))
+        res = email_service.get_message_by_id(req)
 
-@router.get("/inbox")
-async def get_inbox(
-    req: EmailFetchRequest
-):
-    try:
-        email_service = EmailService(config)
-
-        return email_service.get_inbox(req)
+        return res
         
     except Exception as e:
         print(e)
@@ -57,7 +52,9 @@ async def get_summary(
     try:
         email_service = EmailService(config)
 
-        return email_service.get_summary(req)
+        res = email_service.get_summary(req)
+
+        return res
         
     except Exception as e:
         print(e)

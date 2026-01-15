@@ -1,5 +1,15 @@
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
+from enum import Enum
+
+class Category(Enum):
+    APPOINTMENT = "Appointment"
+    MEETING = "Meeting"
+    INVITATION = "Invitation"
+    INVOICE = "Invoice"
+    MARKETING = "Marketing"
+    NOTIFICATION = "Notification"
+    ANNOUNCEMENT = "Announcement"
 
 class Attachment(BaseModel):
     filename: str
@@ -23,7 +33,9 @@ class EmailAccountResponse(BaseModel):
 class EmailFetchRequest(BaseModel):
     provider: str
     token_data: Dict[str, Any]
-    limit: Optional[int] = 50
+    label: List[Optional[str]] = ["INBOX"]
+    limit: Optional[int] = 5    
+    page_token: Optional[str] = None
 
 class EmailSummaryRequest(BaseModel):
     email_text: str

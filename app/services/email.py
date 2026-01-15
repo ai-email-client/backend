@@ -7,7 +7,12 @@ from config import Config
 from typing import Dict, Any
 from app.utility import clean_html
 
-from app.schemas.email import EmailFetchRequest, EmailMessageRequest, EmailSummaryRequest, DifySummaryRequest
+from app.schemas.email import (
+    EmailFetchRequest, 
+    EmailMessageRequest, 
+    EmailSummaryRequest, 
+    DifySummaryRequest
+)
 
 class EmailService:
     def __init__(self, config: Config):
@@ -37,14 +42,6 @@ class EmailService:
             res.plain_text = clean_html(res.body)
 
         return res
-    
-    def get_inbox(self, req: EmailFetchRequest):
-        if req.provider == "gmail":
-            provider_service = GmailProvider(self.config)
-        elif req.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
-        else:
-            raise HTTPException(status_code=400, detail="Invalid provider")
     
     def get_summary(self, req: EmailSummaryRequest):
 
