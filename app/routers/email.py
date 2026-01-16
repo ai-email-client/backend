@@ -30,6 +30,21 @@ async def fetch_emails(
         print(e)
         return HTTPException(status_code=500, detail=str(e))
 
+@router.post("/list/plain-text")
+async def get_plain_text(
+    req: EmailFetchRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.get_plain_text(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
 @router.post("/message")
 async def get_message_by_id(
     req: EmailMessageRequest

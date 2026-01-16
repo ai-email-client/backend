@@ -84,8 +84,18 @@ class EmailDetailResponse(BaseModel):
     subject: str
     sender: str
     snippet: str
-    body: str
+    html: Optional[str] = None
+    plain_text: Optional[str] = None
     time: str
     tag: List[str]
     attachments: List[Attachment]
+
+class EmailPlainResponse(BaseModel):
+    msg_id: str
     plain_text: Optional[str] = None
+    tag: List[str]
+
+class EmailFetchPlainResponse(BaseModel):
+    emails: List[EmailPlainResponse]
+    page_token: Optional[str] = None
+

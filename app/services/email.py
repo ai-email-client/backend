@@ -38,8 +38,6 @@ class EmailService:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
         res = provider_service.get_message_by_id(req)
-        if res.plain_text is None:
-            res.plain_text = clean_html(res.body)
 
         return res
     
@@ -53,3 +51,15 @@ class EmailService:
         )
 
         return dify_service.get_summary(req)
+
+    def get_plain_text(self, req: EmailFetchRequest):
+        if req.provider == "gmail":
+            provider_service = GmailProvider(self.config)
+        elif req.provider == "outlook":
+            provider_service = OutlookProvider(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.get_plain_text(req)
+
+        return res

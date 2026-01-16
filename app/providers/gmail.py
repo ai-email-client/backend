@@ -10,7 +10,9 @@ from app.schemas.email import (
     Attachment, 
     EmailDetailResponse, 
     EmailFetchRequest, 
-    EmailMessageRequest
+    EmailMessageRequest,
+    EmailPlainResponse,
+    EmailFetchPlainResponse
 )
 
 class GmailProvider:
@@ -136,7 +138,19 @@ class GmailProvider:
             time = utility.convert_timestamp_to_date(int(result['internalDate']))
             tags = result['labelIds']
 
-            body = utility.get_part_by_mimetype(payload, 'text/html')
+            html_part = utility.get_part_by_mimetype(payload, 'text/html')
+            if html_part is not None:
+                html = utility.get_decode_by_mimetype(html_part, 'text/html')
+            else:
+                html = None
+
+            plain_text_part = utility.get_part_by_mimetype(payload, 'text/plain')
+            if plain_text_part is not None:
+                plain_text = utility.get_decode_by_mimetype(plain_text_part, 'text/plain')
+                plain_text = utility.clean_text(plain_text)
+            else:
+                plain_text = None
+
             attachments = utility.get_attachments(payload)
 
             return EmailDetailResponse(
@@ -144,13 +158,60 @@ class GmailProvider:
                 subject=subject,
                 sender=sender,
                 snippet=snippet,
-                body=utility.get_decode_by_mimetype(body, 'text/html'),
+                html=html,
+                plain_text=plain_text,
                 time=time,
                 tag=tags,
                 attachments=attachments,
-                plain_text=utility.get_decode_by_mimetype(body, 'text/plain')
             )
 
         except Exception as e:
             raise Exception(f"Error function get_message_by_id: {str(e)}")
-    
+
+    def get_plain_text(self, req: EmailFetchRequest): 
+        try:
+            service = self.build_service(req.token_data)
+
+            results = service.users().messages().list(
+                userId='me', 
+                maxResults=req.limit,
+                labelIds=req.label,
+                pageToken=req.page_token
+                ).execute()
+            page_token = results.get('nextPageToken')
+            messages = results.get('messages', [])
+
+            email_list = []
+            if not messages:
+                print("No messages found.")
+            else:
+                for msg in messages:
+                    results = service.users().messages().get(userId='me', id=msg['id']).execute()
+                    payload = results['payload']
+
+                    message_id = results['id']
+                    subject = utility.get_email_header(payload, 'Subject')
+                    sender = utility.get_email_header(payload, 'From')
+                    snippet = results['snippet']
+
+                    body = utility.get_part_by_mimetype(payload, 'text/html')
+                    if body is not None:
+                        body = utility.get_decode_by_mimetype(body, 'text/html')
+                        body = utility.clean_html(body)
+                        body = utility.clean_text(body)
+                    else:
+                        body = utility.get_part_by_mimetype(payload, 'text/plain')
+                        body = utility.get_decode_by_mimetype(body, 'text/plain')
+                        body = utility.clean_text(body)
+
+                    email_list.append(EmailPlainResponse(
+                        msg_id=message_id,
+                        plain_text=body,
+                        tag=results['labelIds'],
+                    ))
+            return EmailFetchPlainResponse(
+                emails=email_list,
+                page_token=page_token
+            )
+        except Exception as e:
+            raise Exception(f"Error function get_plain_text: {str(e)}")

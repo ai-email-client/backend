@@ -1,8 +1,11 @@
 import base64
 import re
 import datetime
+import unicodedata
+
 from typing import Dict, Any, Optional, List
 from bs4 import BeautifulSoup
+
 
 def decode_base64(data: str) -> str:
     try:
@@ -14,21 +17,33 @@ def decode_base64(data: str) -> str:
         return ""
 
 def clean_html(html_content: str) -> str:
+
     try:
         soup = BeautifulSoup(html_content, "html.parser")
+        
+        for element in soup(["script", "style", "head", "meta", "noscript"]):
+            element.extract()
+
         return soup.get_text(separator=' ', strip=True)
+    
     except Exception:
         return html_content
 
 def clean_text(text: str) -> str:
+
     if not text:
         return ""
-    
+
+    text = unicodedata.normalize('NFKC', text)
+
+    text = re.sub(r'[\u200b\u200c\u200d\u2060\ufeff\u00ad\u034f\u2007]', '', text)
+
+    text = text.replace('\ufffd', '')
+    text = re.sub(r'[\t\xa0]', ' ', text)
     text = text.replace('\r', '')
-    
-    lines = [line.rstrip() for line in text.split('\n')]
+    text = re.sub(r' +', ' ', text)
+    lines = [line.strip() for line in text.split('\n')]
     text = '\n'.join(lines)
-    
     text = re.sub(r'\n{3,}', '\n\n', text)
     
     return text.strip()
