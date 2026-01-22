@@ -63,3 +63,15 @@ class EmailService:
         res = provider_service.get_plain_text(req)
 
         return res
+
+    def get_labels(self, req: TokenData):
+        if req.provider == "gmail":
+            provider_service = GmailProvider(self.config)
+        elif req.provider == "outlook":
+            provider_service = OutlookProvider(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.get_labels(req)
+
+        return res

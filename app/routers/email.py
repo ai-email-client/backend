@@ -5,7 +5,9 @@ from typing import Dict, Any
 from app.schemas.email import (
     EmailFetchRequest, 
     EmailMessageRequest, 
-    EmailSummaryRequest
+    EmailSummaryRequest,
+    TokenData
+    
 )
 
 from app.services.email import EmailService
@@ -68,6 +70,21 @@ async def get_summary(
         email_service = EmailService(config)
 
         res = email_service.get_summary(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/label")
+async def get_labels(
+    req: TokenData
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.get_labels(req)
 
         return res
         
