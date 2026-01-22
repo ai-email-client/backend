@@ -8,7 +8,7 @@ conda env create -f env.yml
 
 Activate Environment
 ```
-conda activate email-backend-env
+conda activate ace
 ```
 
 Run Application

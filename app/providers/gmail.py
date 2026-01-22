@@ -215,3 +215,12 @@ class GmailProvider:
             )
         except Exception as e:
             raise Exception(f"Error function get_plain_text: {str(e)}")
+
+    def get_labels(self, req: EmailLabelRequest):
+        try:
+            service = self.build_service(req.token_data)
+            results = service.users().labels().list(userId='me').execute()
+            labels = results.get('labels', [])
+            return labels
+        except Exception as e:
+            raise Exception(f"Error function get_labels: {str(e)}")

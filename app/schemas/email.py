@@ -11,6 +11,10 @@ class Category(Enum):
     NOTIFICATION = "Notification"
     ANNOUNCEMENT = "Announcement"
 
+class TokenData(BaseModel):
+    access_token: str
+    refresh_token: Optional[str] = None
+
 class Attachment(BaseModel):
     filename: str
     mimeType: str
@@ -20,8 +24,7 @@ class Attachment(BaseModel):
 class EmailAccountCreate(BaseModel):
     email: str
     provider: str
-    access_token: str
-    refresh_token: Optional[str] = None
+    token_data: TokenData
 
 class EmailAccountResponse(BaseModel):
     email: str
@@ -30,9 +33,10 @@ class EmailAccountResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 class EmailFetchRequest(BaseModel):
     provider: str
-    token_data: Dict[str, Any]
+    token_data: TokenData
     label: List[Optional[str]] = ["INBOX"]
     limit: Optional[int] = 5    
     page_token: Optional[str] = None
@@ -63,7 +67,7 @@ class EmailSummaryResponse(BaseModel):
     
 class EmailMessageRequest(BaseModel):
     provider: str
-    token_data: Dict[str, Any]
+    token_data: TokenData
     message_id: str
 
 class EmailShortResponse(BaseModel):
