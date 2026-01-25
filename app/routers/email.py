@@ -10,6 +10,10 @@ from app.schemas.email import (
     GetRequest
 )
 
+from app.schemas.category import (
+    CreateLabelRequest
+)
+
 from app.services.email import EmailService
 
 router = APIRouter(
@@ -115,6 +119,21 @@ async def get_attachments(
         email_service = EmailService(config)
 
         res = email_service.get_attachments(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/label/create")
+async def create_label(
+    req: CreateLabelRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.create_label(req)
 
         return res
         

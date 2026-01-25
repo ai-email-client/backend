@@ -24,7 +24,8 @@ from app.schemas.category import (
     MessageListVisibility,
     LabelListVisibility,
     CategoryType,
-    CategoryColor
+    CategoryColor,
+    CreateLabelRequest
 )
 
 class GmailProvider:
@@ -276,3 +277,22 @@ class GmailProvider:
             return results
         except Exception as e:
             raise Exception(f"Error function get_attachments: {str(e)}")
+    
+    def create_label(self, req: CreateLabelRequest):
+        try:
+            body = {
+                "name": req.body.name,
+                "messageListVisibility": req.body.messageListVisibility,
+                "labelListVisibility": req.body.labelListVisibility,
+                "type": req.body.type,
+                "messagesTotal": req.body.messagesTotal,
+                "messagesUnread": req.body.messagesUnread,
+                "threadsTotal": req.body.threadsTotal,
+                "threadsUnread": req.body.threadsUnread,
+                "color": req.body.color.model_dump(),
+            }
+            service = self.build_service(req.token_data)
+            results = service.users().labels().create(userId='me', body=body).execute()
+            return results
+        except Exception as e:
+            raise Exception(f"Error function create_label: {str(e)}")

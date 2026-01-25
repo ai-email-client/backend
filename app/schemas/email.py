@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
+from app.schemas.user import TokenData
+
 class Category(Enum):
     APPOINTMENT = "Appointment"
     MEETING = "Meeting"
@@ -10,10 +12,6 @@ class Category(Enum):
     MARKETING = "Marketing"
     NOTIFICATION = "Notification"
     ANNOUNCEMENT = "Announcement"
-
-class TokenData(BaseModel):
-    access_token: str
-    refresh_token: Optional[str] = None
 
 class Attachment(BaseModel):
     filename: str

@@ -16,6 +16,10 @@ from app.schemas.email import (
     GetRequest
 )
 
+from app.schemas.category import (
+    CreateLabelRequest
+)
+
 class EmailService:
     def __init__(self, config: Config):
         self.config = config
@@ -99,5 +103,17 @@ class EmailService:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
         res = provider_service.get_attachments(req)
+
+        return res
+    
+    def create_label(self, req: CreateLabelRequest):
+        if req.provider == "gmail":
+            provider_service = GmailProvider(self.config)
+        elif req.provider == "outlook":
+            provider_service = OutlookProvider(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.create_label(req)
 
         return res

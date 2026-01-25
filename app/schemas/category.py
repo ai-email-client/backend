@@ -2,6 +2,8 @@ from enum import Enum
 from pydantic import BaseModel
 from typing import List
 
+from app.schemas.user import TokenData
+
 class MessageListVisibility(str, Enum):
     HIDE = "hide"
     SHOW = "show"
@@ -33,3 +35,8 @@ class Category(BaseModel):
 
 class CategoryListResponse(BaseModel):
     categories: List[Category]
+
+class CreateLabelRequest(BaseModel):
+    provider: str
+    token_data: TokenData
+    body: Category
