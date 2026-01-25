@@ -11,7 +11,9 @@ from app.schemas.email import (
     EmailFetchRequest, 
     EmailMessageRequest, 
     EmailSummaryRequest, 
-    DifySummaryRequest
+    DifySummaryRequest,
+    AttachmentRequest,
+    GetRequest
 )
 
 class EmailService:
@@ -64,7 +66,7 @@ class EmailService:
 
         return res
 
-    def get_labels(self, req: TokenData):
+    def get_labels(self, req: GetRequest):
         if req.provider == "gmail":
             provider_service = GmailProvider(self.config)
         elif req.provider == "outlook":
@@ -73,5 +75,29 @@ class EmailService:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
         res = provider_service.get_labels(req)
+
+        return res
+    
+    def get_user_profile(self, req: GetRequest):
+        if req.provider == "gmail":
+            provider_service = GmailProvider(self.config)
+        elif req.provider == "outlook":
+            provider_service = OutlookProvider(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.get_user_profile(req)
+
+        return res
+    
+    def get_attachments(self, req: AttachmentRequest):
+        if req.provider == "gmail":
+            provider_service = GmailProvider(self.config)
+        elif req.provider == "outlook":
+            provider_service = OutlookProvider(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.get_attachments(req)
 
         return res

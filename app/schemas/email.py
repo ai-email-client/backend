@@ -33,6 +33,15 @@ class EmailAccountResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class GetRequest(BaseModel):
+    provider: str
+    token_data: TokenData
+
+class AttachmentRequest(BaseModel):
+    provider: str
+    token_data: TokenData
+    msg_id: str
+    attachment_id: str
 
 class EmailFetchRequest(BaseModel):
     provider: str

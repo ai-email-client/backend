@@ -6,8 +6,8 @@ from app.schemas.email import (
     EmailFetchRequest, 
     EmailMessageRequest, 
     EmailSummaryRequest,
-    TokenData
-    
+    AttachmentRequest,
+    GetRequest
 )
 
 from app.services.email import EmailService
@@ -79,12 +79,42 @@ async def get_summary(
 
 @router.post("/label")
 async def get_labels(
-    req: TokenData
+    req: GetRequest
 ):
     try:
         email_service = EmailService(config)
 
         res = email_service.get_labels(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/user")
+async def get_user_profile(
+    req: GetRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.get_user_profile(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/message/attachment")
+async def get_attachments(
+    req: AttachmentRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.get_attachments(req)
 
         return res
         

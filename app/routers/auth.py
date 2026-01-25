@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse
-from google_auth_oauthlib.flow import Flow
 from config import Config
 from app.providers.gmail import GmailProvider
 from app.providers.outlook import OutlookProvider
@@ -23,7 +22,7 @@ async def login(provider: str):
     
     auth_url = provider_service.login()
     
-    return RedirectResponse(url=auth_url)
+    return {"url": auth_url}
 
 @router.get("/callback/{provider}")
 async def callback(
@@ -46,6 +45,6 @@ async def callback(
         url = f"http://localhost:5173/#/?provider={provider}&access_token={access_token}&refresh_token={refresh_token}"
         print(access_token)
         print(refresh_token)
-        return RedirectResponse(url=url, status_code=302)
+        return RedirectResponse(url=url)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

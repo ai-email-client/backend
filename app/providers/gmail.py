@@ -7,12 +7,24 @@ from app import utility
 
 from app.schemas.email import (
     EmailShortResponse, 
-    Attachment, 
+    Attachment,
+    TokenData,
     EmailDetailResponse, 
     EmailFetchRequest, 
     EmailMessageRequest,
     EmailPlainResponse,
-    EmailFetchPlainResponse
+    EmailFetchPlainResponse,
+    AttachmentRequest,
+    GetRequest
+)
+
+from app.schemas.category import (
+    Category,
+    CategoryListResponse,
+    MessageListVisibility,
+    LabelListVisibility,
+    CategoryType,
+    CategoryColor
 )
 
 class GmailProvider:
@@ -20,10 +32,10 @@ class GmailProvider:
         self.config = config
         self.scopes = ['https://mail.google.com/', 'openid']
         
-    def build_service(self, token: Dict[str, Any]):
+    def build_service(self, token_data: TokenData):
         creds = Credentials(
-            token=token.get('access_token'),
-            refresh_token=token.get('refresh_token'),
+            token=token_data.access_token,
+            refresh_token=token_data.refresh_token,
             token_uri=self.config.GOOGLE_TOKEN_URI,
             client_id=self.config.GOOGLE_CLIENT_ID,
             client_secret=self.config.GOOGLE_CLIENT_SECRET,
@@ -216,11 +228,51 @@ class GmailProvider:
         except Exception as e:
             raise Exception(f"Error function get_plain_text: {str(e)}")
 
-    def get_labels(self, req: EmailLabelRequest):
+    def get_labels(self, req: GetRequest):
         try:
             service = self.build_service(req.token_data)
             results = service.users().labels().list(userId='me').execute()
             labels = results.get('labels', [])
-            return labels
+
+            category_list = []
+            for label in labels:
+                category_list.append(Category(
+                    id=label.get('id'),
+                    name=label.get('name'),
+                    messageListVisibility=MessageListVisibility(label.get('messageListVisibility', 'show')),
+                    labelListVisibility=LabelListVisibility(label.get('labelListVisibility', 'labelShow')),
+                    type=CategoryType(label.get('type')),
+                    messagesTotal=label.get('messagesTotal', 0),
+                    messagesUnread=label.get('messagesUnread', 0),
+                    threadsTotal=label.get('threadsTotal', 0),
+                    threadsUnread=label.get('threadsUnread', 0),
+                    color=label.get('color', CategoryColor(
+                        textColor="#000000",
+                        backgroundColor="#FFFFFF"
+                    )),
+                ))
+            # return labels
+
+            return CategoryListResponse(categories=category_list)
         except Exception as e:
             raise Exception(f"Error function get_labels: {str(e)}")
+
+    def get_user_profile(self, req: GetRequest):
+        try:
+            service = self.build_service(req.token_data)
+            results = service.users().getProfile(userId='me').execute()
+            return results
+        except Exception as e:
+            raise Exception(f"Error function get_user_profile: {str(e)}")
+    
+    def get_attachments(self, req: AttachmentRequest):
+        try:
+            service = self.build_service(req.token_data)
+            results = service.users().messages().attachments().get(
+                userId='me', 
+                id=req.attachment_id,
+                messageId=req.message_id
+            ).execute()
+            return results
+        except Exception as e:
+            raise Exception(f"Error function get_attachments: {str(e)}")
