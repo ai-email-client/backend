@@ -9,12 +9,14 @@ from app.schemas.email import (
     EmailShortResponse, Attachment,TokenData,EmailDetailResponse, 
     EmailFetchRequest, EmailMessageRequest,EmailPlainResponse,
     EmailFetchPlainResponse,AttachmentRequest,GetRequest,
+    MessageDeleteRequest, MessageBatchDeleteRequest
 )
 
 from app.schemas.category import (
     Category,CategoryListResponse,MessageListVisibility,
     LabelListVisibility,CategoryType,CategoryColor,
-    CreateLabelRequest, ModifyLabelRequest
+    CreateLabelRequest, GetLabelRequest,
+    MessageModifyLabelRequest, MessageBatchModifyLabelRequest
 )
 
 class GmailProvider:
@@ -294,7 +296,7 @@ class GmailProvider:
         except Exception as e:
             raise Exception(f"Error function create_label: {str(e)}")
 
-    def message_modify_label(self, req: ModifyLabelRequest):
+    def message_modify_label(self, req: MessageModifyLabelRequest):
         try:
             body = {
                 "addLabelIds": req.addLabelIds,
@@ -306,7 +308,7 @@ class GmailProvider:
         except Exception as e:
             raise Exception(f"Error function modify_label: {str(e)}")
     
-    def message_batch_modify_label(self, req: ModifyLabelRequest):
+    def message_batch_modify_label(self, req: MessageBatchModifyLabelRequest):
         try:
             body = {
                 "ids": req.ids,

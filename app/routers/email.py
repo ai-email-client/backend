@@ -4,7 +4,8 @@ from typing import Dict, Any
 
 from app.schemas.email import (
     EmailFetchRequest, EmailMessageRequest, EmailSummaryRequest, 
-    DifySummaryRequest,AttachmentRequest,GetRequest
+    DifySummaryRequest,AttachmentRequest,GetRequest,
+    MessageDeleteRequest, MessageBatchDeleteRequest
 )
 
 from app.schemas.category import (

@@ -9,11 +9,13 @@ from app.utility import clean_html
 
 from app.schemas.email import (
     EmailFetchRequest, EmailMessageRequest, EmailSummaryRequest, 
-    DifySummaryRequest,AttachmentRequest,GetRequest
+    DifySummaryRequest,AttachmentRequest,GetRequest,
+    MessageDeleteRequest, MessageBatchDeleteRequest
 )
 
 from app.schemas.category import (
-    CreateLabelRequest, MessageModifyLabelRequest, MessageBatchModifyLabelRequest
+    CreateLabelRequest, MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
+    GetLabelRequest
 )
 
 class EmailService:
