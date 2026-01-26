@@ -69,6 +69,12 @@ class EmailSummaryResponse(BaseModel):
     instructions: Optional[List[str]] = None
     required_items: Optional[List[str]] = None
     summary: str
+    is_spam: bool
+    is_threat: bool
+    spam_type: Optional[str] = None
+    spam_confidence: int
+    security_type: str
+    security_confidence: int
     extraction_status: str
     confidence: float
     

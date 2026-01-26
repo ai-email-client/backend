@@ -22,8 +22,8 @@ class CategoryColor(BaseModel):
     backgroundColor: str
 
 class Category(BaseModel):
-    id: str
-    name: str
+    id: str | None = None
+    name: str | None = None
     messageListVisibility: MessageListVisibility | None = None
     labelListVisibility: LabelListVisibility | None = None
     type: CategoryType | None = None
@@ -40,3 +40,17 @@ class CreateLabelRequest(BaseModel):
     provider: str
     token_data: TokenData
     body: Category
+
+class MessageBatchModifyLabelRequest(BaseModel):
+    provider: str
+    token_data: TokenData
+    ids: List[str]
+    addLabelIds: List[str] = []
+    removeLabelIds: List[str] = []
+
+class MessageModifyLabelRequest(BaseModel):
+    provider: str
+    token_data: TokenData
+    id: str
+    addLabelIds: List[str] = []
+    removeLabelIds: List[str] = []

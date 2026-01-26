@@ -8,16 +8,12 @@ from typing import Dict, Any
 from app.utility import clean_html
 
 from app.schemas.email import (
-    EmailFetchRequest, 
-    EmailMessageRequest, 
-    EmailSummaryRequest, 
-    DifySummaryRequest,
-    AttachmentRequest,
-    GetRequest
+    EmailFetchRequest, EmailMessageRequest, EmailSummaryRequest, 
+    DifySummaryRequest,AttachmentRequest,GetRequest
 )
 
 from app.schemas.category import (
-    CreateLabelRequest
+    CreateLabelRequest, MessageModifyLabelRequest, MessageBatchModifyLabelRequest
 )
 
 class EmailService:
@@ -115,5 +111,29 @@ class EmailService:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
         res = provider_service.create_label(req)
+
+        return res
+    
+    def message_modify_label(self, req: MessageModifyLabelRequest):
+        if req.provider == "gmail":
+            provider_service = GmailProvider(self.config)
+        elif req.provider == "outlook":
+            provider_service = OutlookProvider(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.message_modify_label(req)
+
+        return res
+
+    def message_batch_modify_label(self, req: MessageBatchModifyLabelRequest):
+        if req.provider == "gmail":
+            provider_service = GmailProvider(self.config)
+        elif req.provider == "outlook":
+            provider_service = OutlookProvider(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.message_batch_modify_label(req)
 
         return res

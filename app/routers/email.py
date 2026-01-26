@@ -3,15 +3,12 @@ from config import Config
 from typing import Dict, Any
 
 from app.schemas.email import (
-    EmailFetchRequest, 
-    EmailMessageRequest, 
-    EmailSummaryRequest,
-    AttachmentRequest,
-    GetRequest
+    EmailFetchRequest, EmailMessageRequest, EmailSummaryRequest, 
+    DifySummaryRequest,AttachmentRequest,GetRequest
 )
 
 from app.schemas.category import (
-    CreateLabelRequest
+    CreateLabelRequest, MessageModifyLabelRequest, MessageBatchModifyLabelRequest
 )
 
 from app.services.email import EmailService
@@ -134,6 +131,36 @@ async def create_label(
         email_service = EmailService(config)
 
         res = email_service.create_label(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/label/modify")
+async def modify_label(
+    req: MessageModifyLabelRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.message_modify_label(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/label/batch-modify")
+async def batch_modify_label(
+    req: MessageBatchModifyLabelRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.message_batch_modify_label(req)
 
         return res
         

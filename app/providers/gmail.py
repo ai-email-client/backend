@@ -6,26 +6,15 @@ from config import Config
 from app import utility
 
 from app.schemas.email import (
-    EmailShortResponse, 
-    Attachment,
-    TokenData,
-    EmailDetailResponse, 
-    EmailFetchRequest, 
-    EmailMessageRequest,
-    EmailPlainResponse,
-    EmailFetchPlainResponse,
-    AttachmentRequest,
-    GetRequest
+    EmailShortResponse, Attachment,TokenData,EmailDetailResponse, 
+    EmailFetchRequest, EmailMessageRequest,EmailPlainResponse,
+    EmailFetchPlainResponse,AttachmentRequest,GetRequest,
 )
 
 from app.schemas.category import (
-    Category,
-    CategoryListResponse,
-    MessageListVisibility,
-    LabelListVisibility,
-    CategoryType,
-    CategoryColor,
-    CreateLabelRequest
+    Category,CategoryListResponse,MessageListVisibility,
+    LabelListVisibility,CategoryType,CategoryColor,
+    CreateLabelRequest, ModifyLabelRequest
 )
 
 class GmailProvider:
@@ -296,3 +285,28 @@ class GmailProvider:
             return results
         except Exception as e:
             raise Exception(f"Error function create_label: {str(e)}")
+
+    def message_modify_label(self, req: ModifyLabelRequest):
+        try:
+            body = {
+                "addLabelIds": req.addLabelIds,
+                "removeLabelIds": req.removeLabelIds,
+            }
+            service = self.build_service(req.token_data)
+            results = service.users().messages().modify(userId='me', id=req.id, body=body).execute()
+            return results
+        except Exception as e:
+            raise Exception(f"Error function modify_label: {str(e)}")
+    
+    def message_batch_modify_label(self, req: ModifyLabelRequest):
+        try:
+            body = {
+                "ids": req.ids,
+                "addLabelIds": req.addLabelIds,
+                "removeLabelIds": req.removeLabelIds,
+            }
+            service = self.build_service(req.token_data)
+            results = service.users().messages().batchModify(userId='me', body=body).execute()
+            return results
+        except Exception as e:
+            raise Exception(f"Error function message_batch_modify_label: {str(e)}")
