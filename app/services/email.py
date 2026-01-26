@@ -10,7 +10,7 @@ from app.utility import clean_html
 from app.schemas.email import (
     EmailFetchRequest, EmailMessageRequest, EmailSummaryRequest, 
     DifySummaryRequest,AttachmentRequest,GetRequest,
-    MessageDeleteRequest, MessageBatchDeleteRequest
+    MessageIdRequest, MessageBatchDeleteRequest
 )
 
 from app.schemas.category import (
@@ -152,7 +152,7 @@ class EmailService:
 
         return res
 
-    def message_delete(self, req: MessageDeleteRequest):
+    def message_delete(self, req: MessageIdRequest):
         if req.provider == "gmail":
             provider_service = GmailProvider(self.config)
         elif req.provider == "outlook":
@@ -173,5 +173,29 @@ class EmailService:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
         res = provider_service.message_batch_delete(req)
+
+        return res
+    
+    def message_trash(self, req: MessageIdRequest):
+        if req.provider == "gmail":
+            provider_service = GmailProvider(self.config)
+        elif req.provider == "outlook":
+            provider_service = OutlookProvider(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.message_trash(req)
+
+        return res
+
+    def message_untrash(self, req: MessageIdRequest):
+        if req.provider == "gmail":
+            provider_service = GmailProvider(self.config)
+        elif req.provider == "outlook":
+            provider_service = OutlookProvider(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.message_untrash(req)
 
         return res

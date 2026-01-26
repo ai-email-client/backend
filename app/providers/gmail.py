@@ -9,7 +9,7 @@ from app.schemas.email import (
     EmailShortResponse, Attachment,TokenData,EmailDetailResponse, 
     EmailFetchRequest, EmailMessageRequest,EmailPlainResponse,
     EmailFetchPlainResponse,AttachmentRequest,GetRequest,
-    MessageDeleteRequest, MessageBatchDeleteRequest
+    MessageIdRequest, MessageBatchDeleteRequest
 )
 
 from app.schemas.category import (
@@ -321,7 +321,7 @@ class GmailProvider:
         except Exception as e:
             raise Exception(f"Error function message_batch_modify_label: {str(e)}")
     
-    def message_delete(self, req: MessageDeleteRequest):
+    def message_delete(self, req: MessageIdRequest):
         try:
             service = self.build_service(req.token_data)
             results = service.users().messages().delete(userId='me', id=req.id).execute()
@@ -339,3 +339,19 @@ class GmailProvider:
             return results
         except Exception as e:
             raise Exception(f"Error function message_batch_delete: {str(e)}")
+
+    def message_trash(self, req: MessageIdRequest):
+        try:
+            service = self.build_service(req.token_data)
+            results = service.users().messages().trash(userId='me', id=req.id).execute()
+            return results
+        except Exception as e:
+            raise Exception(f"Error function message_trash: {str(e)}")
+    
+    def message_untrash(self, req: MessageIdRequest):
+        try:
+            service = self.build_service(req.token_data)
+            results = service.users().messages().untrash(userId='me', id=req.id).execute()
+            return results
+        except Exception as e:
+            raise Exception(f"Error function message_untrash: {str(e)}")

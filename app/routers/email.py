@@ -5,7 +5,7 @@ from typing import Dict, Any
 from app.schemas.email import (
     EmailFetchRequest, EmailMessageRequest, EmailSummaryRequest, 
     DifySummaryRequest,AttachmentRequest,GetRequest,
-    MessageDeleteRequest, MessageBatchDeleteRequest
+    MessageIdRequest, MessageBatchDeleteRequest
 )
 
 from app.schemas.category import (
@@ -22,7 +22,7 @@ router = APIRouter(
 
 config = Config()
 
-@router.post("/fetch")
+@router.post("/messages")
 async def fetch_emails(
     req: EmailFetchRequest
 ):
@@ -187,7 +187,7 @@ async def batch_modify_label(
 
 @router.post("/message/delete")
 async def delete_message(
-    req: MessageDeleteRequest
+    req: MessageIdRequest
 ):
     try:
         email_service = EmailService(config)
@@ -215,3 +215,32 @@ async def batch_delete_message(
         print(e)
         return HTTPException(status_code=500, detail=str(e))
 
+@router.post("/message/trash")
+async def trash_message(
+    req: MessageIdRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.message_trash(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/message/untrash")
+async def untrash_message(
+    req: MessageIdRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.message_untrash(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))

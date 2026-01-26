@@ -116,7 +116,7 @@ class EmailFetchPlainResponse(BaseModel):
     emails: List[EmailPlainResponse]
     page_token: Optional[str] = None
 
-class MessageDeleteRequest(BaseModel):
+class MessageIdRequest(BaseModel):
     provider: str
     token_data: TokenData
     id: str
