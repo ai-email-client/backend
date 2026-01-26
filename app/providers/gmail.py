@@ -310,3 +310,22 @@ class GmailProvider:
             return results
         except Exception as e:
             raise Exception(f"Error function message_batch_modify_label: {str(e)}")
+    
+    def message_delete(self, req: MessageDeleteRequest):
+        try:
+            service = self.build_service(req.token_data)
+            results = service.users().messages().delete(userId='me', id=req.id).execute()
+            return results
+        except Exception as e:
+            raise Exception(f"Error function message_delete: {str(e)}")
+
+    def message_batch_delete(self, req: MessageBatchDeleteRequest):
+        try:
+            body = {
+                "ids": req.ids,
+            }
+            service = self.build_service(req.token_data)
+            results = service.users().messages().batchDelete(userId='me', body=body).execute()
+            return results
+        except Exception as e:
+            raise Exception(f"Error function message_batch_delete: {str(e)}")

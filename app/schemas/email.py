@@ -116,3 +116,12 @@ class EmailFetchPlainResponse(BaseModel):
     emails: List[EmailPlainResponse]
     page_token: Optional[str] = None
 
+class MessageDeleteRequest(BaseModel):
+    provider: str
+    token_data: TokenData
+    id: str
+
+class MessageBatchDeleteRequest(BaseModel):
+    provider: str
+    token_data: TokenData
+    ids: List[str]

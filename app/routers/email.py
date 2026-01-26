@@ -138,7 +138,7 @@ async def create_label(
         print(e)
         return HTTPException(status_code=500, detail=str(e))
 
-@router.post("/label/modify")
+@router.post("/message/modify")
 async def modify_label(
     req: MessageModifyLabelRequest
 ):
@@ -153,7 +153,7 @@ async def modify_label(
         print(e)
         return HTTPException(status_code=500, detail=str(e))
 
-@router.post("/label/batch-modify")
+@router.post("/message/batch-modify")
 async def batch_modify_label(
     req: MessageBatchModifyLabelRequest
 ):
@@ -167,3 +167,34 @@ async def batch_modify_label(
     except Exception as e:
         print(e)
         return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/message/delete")
+async def delete_message(
+    req: MessageDeleteRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.message_delete(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/message/batch-delete")
+async def batch_delete_message(
+    req: MessageBatchDeleteRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.message_batch_delete(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
