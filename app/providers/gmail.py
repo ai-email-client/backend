@@ -267,6 +267,14 @@ class GmailProvider:
         except Exception as e:
             raise Exception(f"Error function get_attachments: {str(e)}")
     
+    def get_label_by_id(self, req: GetLabelRequest):
+        try:
+            service = self.build_service(req.token_data)
+            results = service.users().labels().get(userId='me', id=req.id).execute()
+            return results
+        except Exception as e:
+            raise Exception(f"Error function get_label_by_id: {str(e)}")
+    
     def create_label(self, req: CreateLabelRequest):
         try:
             body = {

@@ -41,6 +41,11 @@ class CreateLabelRequest(BaseModel):
     token_data: TokenData
     body: Category
 
+class GetLabelRequest(BaseModel):
+    provider: str
+    token_data: TokenData
+    id: str
+
 class MessageBatchModifyLabelRequest(BaseModel):
     provider: str
     token_data: TokenData

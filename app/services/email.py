@@ -114,6 +114,18 @@ class EmailService:
 
         return res
     
+    def get_label_by_id(self, req: GetLabelRequest):
+        if req.provider == "gmail":
+            provider_service = GmailProvider(self.config)
+        elif req.provider == "outlook":
+            provider_service = OutlookProvider(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.get_label_by_id(req)
+
+        return res
+    
     def message_modify_label(self, req: MessageModifyLabelRequest):
         if req.provider == "gmail":
             provider_service = GmailProvider(self.config)

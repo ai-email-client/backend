@@ -8,7 +8,8 @@ from app.schemas.email import (
 )
 
 from app.schemas.category import (
-    CreateLabelRequest, MessageModifyLabelRequest, MessageBatchModifyLabelRequest
+    CreateLabelRequest, MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
+    GetLabelRequest
 )
 
 from app.services.email import EmailService
@@ -48,7 +49,7 @@ async def get_plain_text(
         print(e)
         return HTTPException(status_code=500, detail=str(e))
 
-@router.post("/message")
+@router.post("/message/get")
 async def get_message_by_id(
     req: EmailMessageRequest
 ):
@@ -78,7 +79,7 @@ async def get_summary(
         print(e)
         return HTTPException(status_code=500, detail=str(e))
 
-@router.post("/label")
+@router.post("/labels")
 async def get_labels(
     req: GetRequest
 ):
@@ -131,6 +132,21 @@ async def create_label(
         email_service = EmailService(config)
 
         res = email_service.create_label(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/label/get")
+async def get_label_by_id(
+    req: GetLabelRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.get_label_by_id(req)
 
         return res
         
