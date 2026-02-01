@@ -9,7 +9,7 @@ from app.schemas.email import (
     EmailShortResponse, Attachment,TokenData,EmailDetailResponse, 
     EmailFetchRequest, EmailMessageRequest,EmailPlainResponse,
     EmailFetchPlainResponse,AttachmentRequest,GetRequest,
-    MessageIdRequest, MessageBatchDeleteRequest
+    MessageIdRequest, MessageBatchDeleteRequest, EmailFetchResponse
 )
 
 from app.schemas.category import (
@@ -86,7 +86,20 @@ class GmailProvider:
             'refresh_token': creds.refresh_token
         }
 
-    def fetch_emails(self, req: EmailFetchRequest) -> List[EmailShortResponse]:
+    def initialize_labels(self, req: GetRequest):
+        try:
+            service = self.build_service(req.token_data)
+            
+            for label in INITIAL_LABELS:
+                service.users().labels().create(userId='me', body=label).execute()
+
+            return {
+                'message': "Labels initialized successfully"
+            }
+        except Exception as e:
+            raise Exception(f"Error function initialize_labels: {str(e)}")
+
+    def fetch_emails(self, req: EmailFetchRequest) -> EmailFetchResponse:
         try:
             service = self.build_service(req.token_data)
 
@@ -97,13 +110,13 @@ class GmailProvider:
                 pageToken=req.page_token
                 ).execute()
             page_token = results.get('nextPageToken')
-            messages = results.get('messages', [])
+            messages_list = results.get('messages', [])
 
-            email_list = []
-            if not messages:
+            messages = []
+            if not messages_list:
                 print("No messages found.")
             else:
-                for msg in messages:
+                for msg in messages_list:
                     results = service.users().messages().get(userId='me', id=msg['id']).execute()
                     payload = results['payload']
 
@@ -112,7 +125,7 @@ class GmailProvider:
                     sender = utility.get_email_header(payload, 'From')
                     snippet = results['snippet']
 
-                    email_list.append(EmailShortResponse(
+                    messages.append(EmailShortResponse(
                         msg_id=message_id,
                         subject=subject,
                         sender=sender,
@@ -121,9 +134,9 @@ class GmailProvider:
                         tag=results['labelIds'],
                         attachments=utility.get_attachments(payload)
                     ))
-
+            
             return {
-                'emails': email_list,
+                'messages': messages,
                 'page_token': page_token
             }
 

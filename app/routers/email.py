@@ -22,6 +22,22 @@ router = APIRouter(
 
 config = Config()
 
+
+@router.post("/initialize/labels")
+async def initialize_labels(
+    req: GetRequest
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.initialize_labels(req)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
 @router.post("/messages")
 async def fetch_emails(
     req: EmailFetchRequest

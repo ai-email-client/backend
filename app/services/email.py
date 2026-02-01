@@ -6,6 +6,7 @@ from app.services.dify import DifyService
 from config import Config
 from typing import Dict, Any
 from app.utility import clean_html
+from database import Database
 
 from app.schemas.email import (
     EmailFetchRequest, EmailMessageRequest, EmailSummaryRequest, 
@@ -21,6 +22,18 @@ from app.schemas.category import (
 class EmailService:
     def __init__(self, config: Config):
         self.config = config
+
+    def initialize_labels(self, req: GetRequest):
+        if req.provider == "gmail":
+            provider_service = GmailProvider(self.config)
+        elif req.provider == "outlook":
+            provider_service = OutlookProvider(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.initialize_labels(req)
+
+        return res
     
     def fetch_emails(self, req: EmailFetchRequest):
         if req.provider == "gmail":
@@ -53,6 +66,9 @@ class EmailService:
             user="frontend-test",
             response_mode="blocking"
         )
+
+        db = Database(self.config)
+        db.insert("emails", req.dict())
 
         return dify_service.get_summary(req)
 

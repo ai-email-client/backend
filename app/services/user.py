@@ -3,9 +3,8 @@ from app.providers.base import EmailProvider
 from config import Config
 
 class UserService:
-    def __init__(self):
-        self.config = Config()
-        self.emails = []
+    def __init__(self, config: Config):
+        self.config = config
 
     def login(self, credentials: Dict[str, Any]):
         pass

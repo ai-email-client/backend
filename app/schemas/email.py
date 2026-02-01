@@ -93,8 +93,8 @@ class EmailShortResponse(BaseModel):
     attachments: List[Attachment]
 
 class EmailFetchResponse(BaseModel):
-    count: int
-    emails: List[EmailShortResponse]
+    page_token: Optional[str] = None
+    messages: List[EmailShortResponse]
 
 class EmailDetailResponse(BaseModel):
     msg_id: str
@@ -113,7 +113,7 @@ class EmailPlainResponse(BaseModel):
     tag: List[str]
 
 class EmailFetchPlainResponse(BaseModel):
-    emails: List[EmailPlainResponse]
+    messages: List[EmailPlainResponse]
     page_token: Optional[str] = None
 
 class MessageIdRequest(BaseModel):
