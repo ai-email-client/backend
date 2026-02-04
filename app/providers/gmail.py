@@ -123,7 +123,6 @@ class GmailProvider:
         Returns:
             User information as a dict.
         """
-
         user_info_service = self.build_service(credentials)
 
         user_info = None
@@ -220,7 +219,7 @@ class GmailProvider:
                 "credentials": credentials,
                 "updated_at": "now()"
             },on_conflict="email_address").execute()
-            return res.data[0]
+            return res.data[0]['credentials']
         except Exception as e:
             print(f"Error: {e}")
     

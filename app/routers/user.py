@@ -3,8 +3,7 @@ from app.services.user import UserService
 from app.schemas.user import UserRequest
 from typing import Dict, Any
 from config import Config
-from app.providers.gmail import GmailProvider
-from app.providers.outlook import OutlookProvider
+
 from app.utility import get_current_user
 from fastapi import Depends
 
@@ -21,6 +20,7 @@ async def profile(
     req: UserRequest = Depends(get_current_user)
 ):
     try:
+        print(req)
         res = user_service.get_user_profile(req)
         return res
     except Exception as e:
