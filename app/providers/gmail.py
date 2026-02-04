@@ -291,10 +291,11 @@ class GmailProvider:
 
     def get_message_by_id(self, 
         req: EmailMessageRequest,
+        current_user: UserRequest,
         db: SupabaseDB
     ) -> EmailDetailResponse:
         try:
-            credentials = self.get_stored_credentials(req.email_address, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
 
             result = service.users().messages().get(userId='me',id=req.message_id).execute()
@@ -337,10 +338,11 @@ class GmailProvider:
 
     def get_plain_text(self, 
         req: EmailFetchRequest,
+        current_user: UserRequest,
         db: SupabaseDB
     ) -> EmailFetchResponse: 
         try:
-            credentials = self.get_stored_credentials(req.email_address, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
 
             results = service.users().messages().list(
@@ -388,11 +390,11 @@ class GmailProvider:
             raise Exception(f"Error function get_plain_text: {str(e)}")
 
     def get_labels(self, 
-        req: UserRequest,
+        current_user: UserRequest,
         db: SupabaseDB
     ) -> CategoryListResponse:
         try:
-            credentials = self.get_stored_credentials(req.email_address, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
             results = service.users().labels().list(userId='me').execute()
             labels = results.get('labels', [])
@@ -422,10 +424,11 @@ class GmailProvider:
 
     def get_attachments(self, 
         req: AttachmentRequest,
+        current_user: UserRequest,
         db: SupabaseDB
     ):
         try:
-            credentials = self.get_stored_credentials(req.email_address, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
             results = service.users().messages().attachments().get(
                 userId='me', 
@@ -437,10 +440,12 @@ class GmailProvider:
             raise Exception(f"Error function get_attachments: {str(e)}")
     
     def get_label_by_id(self, 
-        req: GetLabelRequest
+        req: GetLabelRequest,
+        current_user: UserRequest,
+        db: SupabaseDB
     ):
         try:
-            credentials = self.get_stored_credentials(email, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
             results = service.users().labels().get(userId='me', id=req.id).execute()
             return results
@@ -448,7 +453,9 @@ class GmailProvider:
             raise Exception(f"Error function get_label_by_id: {str(e)}")
     
     def create_label(self, 
-        req: CreateLabelRequest
+        req: CreateLabelRequest,
+        current_user: UserRequest,
+        db: SupabaseDB
     ):
         try:
             body = {
@@ -470,7 +477,9 @@ class GmailProvider:
             raise Exception(f"Error function create_label: {str(e)}")
 
     def message_modify_label(self, 
-        req: MessageModifyLabelRequest
+        req: MessageModifyLabelRequest,
+        current_user: UserRequest,
+        db: SupabaseDB
     ):
         try:
             body = {
@@ -485,7 +494,9 @@ class GmailProvider:
             raise Exception(f"Error function modify_label: {str(e)}")
     
     def message_batch_modify_label(self, 
-        req: MessageBatchModifyLabelRequest
+        req: MessageBatchModifyLabelRequest,
+        current_user: UserRequest,
+        db: SupabaseDB
     ):
         try:
             body = {
@@ -501,10 +512,12 @@ class GmailProvider:
             raise Exception(f"Error function message_batch_modify_label: {str(e)}")
     
     def message_delete(self, 
-        req: MessageIdRequest
+        req: MessageIdRequest,
+        current_user: UserRequest,
+        db: SupabaseDB
     ):
         try:
-            credentials = self.get_stored_credentials(email, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
             results = service.users().messages().delete(userId='me', id=req.id).execute()
             return results
@@ -512,7 +525,9 @@ class GmailProvider:
             raise Exception(f"Error function message_delete: {str(e)}")
 
     def message_batch_delete(self, 
-        req: MessageBatchDeleteRequest
+        req: MessageBatchDeleteRequest,
+        current_user: UserRequest,
+        db: SupabaseDB
     ):
         try:
             body = {
@@ -526,10 +541,12 @@ class GmailProvider:
             raise Exception(f"Error function message_batch_delete: {str(e)}")
 
     def message_trash(self, 
-        req: MessageIdRequest
+        req: MessageIdRequest,
+        current_user: UserRequest,
+        db: SupabaseDB
     ):
         try:
-            credentials = self.get_stored_credentials(email, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
             results = service.users().messages().trash(userId='me', id=req.id).execute()
             return results
@@ -538,10 +555,11 @@ class GmailProvider:
     
     def message_untrash(self, 
         req: MessageIdRequest,
+        current_user: UserRequest,
         db: SupabaseDB
     ):
         try:
-            credentials = self.get_stored_credentials(req.email_address, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
             results = service.users().messages().untrash(userId='me', id=req.id).execute()
             return results
