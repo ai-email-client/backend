@@ -224,11 +224,11 @@ class GmailProvider:
             print(f"Error: {e}")
     
     def initialize_labels(self, 
-        req: UserRequest,
+        current_user: UserRequest,
         db: SupabaseDB
     ):
         try:
-            credentials = self.get_stored_credentials(req.email_address, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
 
             for label in INITIAL_LABELS:
@@ -468,7 +468,7 @@ class GmailProvider:
                 "threadsUnread": req.body.threadsUnread,
                 "color": req.body.color.model_dump(),
             }
-            credentials = self.get_stored_credentials(email, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
             results = service.users().labels().create(userId='me', body=body).execute()
             return results
@@ -485,7 +485,7 @@ class GmailProvider:
                 "addLabelIds": req.addLabelIds,
                 "removeLabelIds": req.removeLabelIds,
             }
-            credentials = self.get_stored_credentials(email, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
             results = service.users().messages().modify(userId='me', id=req.id, body=body).execute()
             return results
@@ -503,7 +503,7 @@ class GmailProvider:
                 "addLabelIds": req.addLabelIds,
                 "removeLabelIds": req.removeLabelIds,
             }
-            credentials = self.get_stored_credentials(email, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
             results = service.users().messages().batchModify(userId='me', body=body).execute()
             return results
@@ -532,7 +532,7 @@ class GmailProvider:
             body = {
                 "ids": req.ids,
             }
-            credentials = self.get_stored_credentials(email, db)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
             results = service.users().messages().batchDelete(userId='me', body=body).execute()
             return results

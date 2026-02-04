@@ -87,7 +87,7 @@ async def get_message_by_id(
         print(e)
         return HTTPException(status_code=500, detail=str(e))
 
-@router.post("/labels")
+@router.get("/labels")
 async def get_labels(
     current_user: UserRequest = Depends(get_current_user)
 ):
