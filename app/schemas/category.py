@@ -4,98 +4,6 @@ from typing import List
 
 from app.schemas.color import Color
 
-
-INITIAL_LABELS = [
-    {
-        "name": "appointment",
-        "messageListVisibility": "show",
-        "labelListVisibility": "labelShowIfUnread",
-        "type": "user",
-        "color": 
-            {
-                "textColor": Color.BLUE_DARK.value, 
-                "backgroundColor": Color.BLUE_PALE.value
-            }
-    },
-    {
-        "name": "meeting",
-        "messageListVisibility": "show",
-        "labelListVisibility": "labelShowIfUnread",
-        "type": "user",
-        "color": 
-            {
-                "textColor": Color.WHITE.value, 
-                "backgroundColor": Color.BLACK.value
-            }
-    },
-    {
-        "name": "invitation",
-        "messageListVisibility": "show",
-        "labelListVisibility": "labelShowIfUnread",
-        "type": "user",
-        "color": 
-            {
-                "textColor": Color.BLUE_ROYAL.value, 
-                "backgroundColor": Color.BLUE_PALE.value
-            }
-    },
-    {
-        "name": "invoice",
-        "messageListVisibility": "show",
-        "labelListVisibility": "labelShow",
-        "type": "user",
-        "color": 
-            {
-                "textColor": Color.RED_BRICK.value, 
-                "backgroundColor": Color.RED_SALMON.value
-            }
-    },
-    {
-        "name": "marketing",
-        "messageListVisibility": "show",
-        "labelListVisibility": "labelHide",
-        "type": "user",
-        "color": 
-            {
-                "textColor": Color.BROWN_GOLDEN.value, 
-                "backgroundColor": Color.APRICOT.value
-            }
-    },
-    {
-        "name": "notification",
-        "messageListVisibility": "show",
-        "labelListVisibility": "labelShowIfUnread",
-        "type": "user",
-        "color": 
-            {
-                "textColor": Color.DARK_GRAY_1.value, 
-                "backgroundColor": Color.OFF_WHITE_1.value
-            }
-    },
-    {
-        "name": "announcement",
-        "messageListVisibility": "show",
-        "labelListVisibility": "labelShow",
-        "type": "user",
-        "color": 
-            {
-                "textColor": Color.RED_DEEP.value, 
-                "backgroundColor": Color.PEACH.value
-            }
-    },
-    {
-        "name": "other",
-        "messageListVisibility": "show",
-        "labelListVisibility": "labelHide",
-        "type": "user",
-        "color": 
-            {
-                "textColor": Color.DARK_GRAY_1.value, 
-                "backgroundColor": Color.OFF_WHITE_1.value
-            }
-    }
-]
-
 class Category(Enum):
     APPOINTMENT = "Appointment"
     MEETING = "Meeting"
@@ -143,6 +51,9 @@ class CreateLabelRequest(BaseModel):
 class GetLabelRequest(BaseModel):
     id: str
 
+class SyncLabelsRequest(BaseModel):
+    names: List[str]
+
 class MessageBatchModifyLabelRequest(BaseModel):
     ids: List[str]
     addLabelIds: List[str] = []
@@ -152,3 +63,87 @@ class MessageModifyLabelRequest(BaseModel):
     id: str
     addLabelIds: List[str] = []
     removeLabelIds: List[str] = []
+
+
+INITIAL_LABELS = {
+    "appointment": {
+        "name": "appointment",
+        "messageListVisibility": MessageListVisibility.SHOW,
+        "labelListVisibility": LabelListVisibility.SHOW,
+        "type": "user",
+        "color": {
+            "textColor": Color.BLUE_DARK.value,
+            "backgroundColor": Color.BLUE_PALE.value
+        }
+    },
+    "meeting": {
+        "name": "meeting",
+        "messageListVisibility": MessageListVisibility.SHOW,
+        "labelListVisibility": LabelListVisibility.SHOW,
+        "type": "user",
+        "color": {
+            "textColor": Color.WHITE.value,
+            "backgroundColor": Color.BLACK.value
+        }
+    },
+    "invitation": {
+        "name": "invitation",
+        "messageListVisibility": MessageListVisibility.SHOW,
+        "labelListVisibility": LabelListVisibility.SHOW,
+        "type": "user",
+        "color": {
+            "textColor": Color.BLUE_ROYAL.value,
+            "backgroundColor": Color.BLUE_PALE.value
+        }
+    },
+    "invoice": {
+        "name": "invoice",
+        "messageListVisibility": MessageListVisibility.SHOW,
+        "labelListVisibility": LabelListVisibility.SHOW,
+        "type": "user",
+        "color": {
+            "textColor": Color.RED_BRICK.value,
+            "backgroundColor": Color.RED_SALMON.value
+        }
+    },
+    "marketing": {
+        "name": "marketing",
+        "messageListVisibility": MessageListVisibility.SHOW,
+        "labelListVisibility": LabelListVisibility.SHOW,
+        "type": "user",
+        "color": {
+            "textColor": Color.BROWN_GOLDEN.value,
+            "backgroundColor": Color.APRICOT.value
+        }
+    },
+    "notification": {
+        "name": "notification",
+        "messageListVisibility": MessageListVisibility.SHOW,
+        "labelListVisibility": LabelListVisibility.SHOW,
+        "type": "user",
+        "color": {
+            "textColor": Color.DARK_GRAY_1.value,
+            "backgroundColor": Color.OFF_WHITE_1.value
+        }
+    },
+    "announcement": {
+        "name": "announcement",
+        "messageListVisibility": MessageListVisibility.SHOW,
+        "labelListVisibility": LabelListVisibility.SHOW,
+        "type": "user",
+        "color": {
+            "textColor": Color.RED_DEEP.value,
+            "backgroundColor": Color.PEACH.value
+        }
+    },
+    "other": {
+        "name": "other",
+        "messageListVisibility": MessageListVisibility.SHOW,
+        "labelListVisibility": LabelListVisibility.SHOW,
+        "type": "user",
+        "color": {
+            "textColor": Color.DARK_GRAY_1.value,
+            "backgroundColor": Color.OFF_WHITE_1.value
+        }
+    }
+}

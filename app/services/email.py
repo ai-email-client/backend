@@ -16,7 +16,7 @@ from app.schemas.email import (
 
 from app.schemas.category import (
     CreateLabelRequest, MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
-    GetLabelRequest
+    GetLabelRequest, SyncLabelsRequest
 )
 
 from app.schemas.user import UserRequest
@@ -117,6 +117,18 @@ class EmailService:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
         res = provider_service.create_label(req, current_user, self.db)
+
+        return res
+    
+    def sync_labels(self, req: SyncLabelsRequest, current_user: UserRequest):
+        if current_user.provider == "gmail":
+            provider_service = GmailProvider(self.config)
+        elif current_user.provider == "outlook":
+            provider_service = OutlookProvider(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.sync_labels(req, current_user, self.db)
 
         return res
     

@@ -29,7 +29,8 @@ from app.schemas.category import (
     Category,CategoryListResponse,MessageListVisibility,
     LabelListVisibility,CategoryType,CategoryColor,
     CreateLabelRequest, GetLabelRequest,
-    MessageModifyLabelRequest, MessageBatchModifyLabelRequest
+    MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
+    SyncLabelsRequest
 )
 
 from app.schemas.user import UserRequest
@@ -476,6 +477,24 @@ class GmailProvider:
             return results
         except Exception as e:
             raise Exception(f"Error function create_label: {str(e)}")
+
+    def sync_labels(self, 
+        req: SyncLabelsRequest,
+        current_user: UserRequest,
+        db: SupabaseDB
+    ):
+        try:
+            results = []
+            credentials = self.get_stored_credentials(current_user.email_address, db)
+            service = self.build_service(credentials)
+            existing_labels = service.users().labels().list(userId='me').execute()
+            for name in req.names:
+                if name in INITIAL_LABELS and name not in [label['name'] for label in existing_labels['labels']]:
+                    body = INITIAL_LABELS[name]
+                    results.append(service.users().labels().create(userId='me', body=body).execute())
+            return results
+        except Exception as e:
+            raise Exception(f"Error function sync_labels: {str(e)}")
 
     def message_modify_label(self, 
         req: MessageModifyLabelRequest,

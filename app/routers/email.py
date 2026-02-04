@@ -11,7 +11,7 @@ from app.schemas.email import (
 
 from app.schemas.category import (
     CreateLabelRequest, MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
-    GetLabelRequest
+    GetLabelRequest, SyncLabelsRequest
 )
 
 from app.services.email import EmailService
@@ -127,6 +127,22 @@ async def create_label(
         email_service = EmailService(config)
 
         res = email_service.create_label(req, current_user)
+
+        return res
+        
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/labels/sync")
+async def sync_labels(
+    req: SyncLabelsRequest,
+    current_user: UserRequest = Depends(get_current_user)
+):
+    try:
+        email_service = EmailService(config)
+
+        res = email_service.sync_labels(req, current_user)
 
         return res
         
