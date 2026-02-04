@@ -46,7 +46,6 @@ async def fetch_emails(
     current_user: UserRequest = Depends(get_current_user)
 ):
     try:
-        print("current_user", current_user)
         email_service = EmailService(config)
 
         return email_service.fetch_emails(req, current_user)

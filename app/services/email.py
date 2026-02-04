@@ -46,7 +46,6 @@ class EmailService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         res = provider_service.fetch_emails(req, current_user, self.db)
-        print(res)
         return res
     
     def get_message_by_id(self, req: EmailMessageRequest, current_user: UserRequest):

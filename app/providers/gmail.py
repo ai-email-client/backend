@@ -193,7 +193,7 @@ class GmailProvider:
                 "email_address", email_address
             ).execute()
             if res.data:
-                return res.data[0]
+                return res.data[0]['credentials']
             return None
 
         except Exception as e:
