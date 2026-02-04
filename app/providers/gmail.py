@@ -80,7 +80,7 @@ class GmailProvider:
     def verify_oauth2_token(self, 
         creds
     ):
-        time.sleep(1)
+        time.sleep(2)
         return id_token.verify_oauth2_token(
             creds['id_token'], 
             requests.Request(), 
@@ -167,9 +167,9 @@ class GmailProvider:
             credentials = self.exchange_code(authorization_code)
             user_info = self.verify_oauth2_token(credentials)
             if credentials.get('refresh_token') is not None:
-                return self.store_credentials(user_info['email'], credentials, db)
+                return self.store_credentials(user_info.get('email'), credentials, db)
             else:
-                return self.get_stored_credentials(user_info['email'], db)
+                return self.get_stored_credentials(user_info.get('email'), db)
         except Exception as e:
             print(f"Error: {e}")
 

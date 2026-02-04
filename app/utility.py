@@ -140,19 +140,15 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
         provider = payload.get("provider")
-        email_address = payload.get("email_address") # 👈 ตรงนี้ค่าที่ได้มาเป็น None
+        email_address = payload.get("email_address")
         
-        # 1. เช็ค provider
         if provider is None:
             raise HTTPException(status_code=401, detail="Invalid Token: Missing provider")
 
-        # 2. ✅ เพิ่มการเช็ค email ตรงนี้ครับ
         if email_address is None:
             raise HTTPException(status_code=401, detail="Invalid Token: Missing email")
             
         return UserRequest(provider=provider, email_address=email_address)
         
     except Exception as e:
-        # อย่าลืมแก้ return เป็น raise นะครับ
-        print(f"Auth Error: {e}")
         raise HTTPException(status_code=401, detail="Could not validate credentials")

@@ -33,17 +33,16 @@ class AuthService:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
         creds = provider_service.get_credentials(code, state, self.db)
-        user_info = provider_service.get_user_info(creds['credentials'])
-
+        user_info = provider_service.get_user_info(creds)
         payload = {
-            "email_address": user_info['emailAddress'],
+            "email_address": user_info.get('emailAddress'),
             "provider": provider,
             "exp": datetime.datetime.utcnow() + datetime.timedelta(days=1)
         }
 
-        jwt = jwt_encode(payload, self.config.SECRET_KEY)
+        token = jwt_encode(payload, self.config.SECRET_KEY)
 
-        url = f"{self.config.FRONTEND_API_URL}#/inbox?token={jwt}"
+        url = f"{self.config.FRONTEND_API_URL}/#/?token={token}"
 
         return url
 
