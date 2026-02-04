@@ -72,8 +72,8 @@ INITIAL_LABELS = {
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",
         "color": {
-            "textColor": Color.BLUE_DARK.value,
-            "backgroundColor": Color.BLUE_PALE.value
+            "textColor": Color.BLUE_DARK,
+            "backgroundColor": Color.BLUE_COBALT
         }
     },
     "meeting": {
@@ -82,8 +82,8 @@ INITIAL_LABELS = {
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",
         "color": {
-            "textColor": Color.WHITE.value,
-            "backgroundColor": Color.BLACK.value
+            "textColor": Color.WHITE,
+            "backgroundColor": Color.BLACK
         }
     },
     "invitation": {
@@ -92,8 +92,8 @@ INITIAL_LABELS = {
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",
         "color": {
-            "textColor": Color.BLUE_ROYAL.value,
-            "backgroundColor": Color.BLUE_PALE.value
+            "textColor": Color.BLUE_ROYAL,
+            "backgroundColor": Color.BLUE_PALE
         }
     },
     "invoice": {
@@ -102,8 +102,8 @@ INITIAL_LABELS = {
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",
         "color": {
-            "textColor": Color.RED_BRICK.value,
-            "backgroundColor": Color.RED_SALMON.value
+            "textColor": Color.RED_BRICK,
+            "backgroundColor": Color.RED_SALMON
         }
     },
     "marketing": {
@@ -112,8 +112,8 @@ INITIAL_LABELS = {
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",
         "color": {
-            "textColor": Color.BROWN_GOLDEN.value,
-            "backgroundColor": Color.APRICOT.value
+            "textColor": Color.BROWN_GOLDEN,
+            "backgroundColor": Color.APRICOT
         }
     },
     "notification": {
@@ -122,8 +122,8 @@ INITIAL_LABELS = {
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",
         "color": {
-            "textColor": Color.DARK_GRAY_1.value,
-            "backgroundColor": Color.OFF_WHITE_1.value
+            "textColor": Color.DARK_GRAY_1,
+            "backgroundColor": Color.OFF_WHITE_1
         }
     },
     "announcement": {
@@ -132,8 +132,8 @@ INITIAL_LABELS = {
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",
         "color": {
-            "textColor": Color.RED_DEEP.value,
-            "backgroundColor": Color.PEACH.value
+            "textColor": Color.RED_DEEP,
+            "backgroundColor": Color.PEACH
         }
     },
     "other": {
@@ -142,8 +142,8 @@ INITIAL_LABELS = {
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",
         "color": {
-            "textColor": Color.DARK_GRAY_1.value,
-            "backgroundColor": Color.OFF_WHITE_1.value
+            "textColor": Color.DARK_GRAY_2,
+            "backgroundColor": Color.OFF_WHITE_2
         }
     }
 }

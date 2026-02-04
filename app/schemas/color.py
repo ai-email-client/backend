@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Color(Enum):
+class Color(str, Enum):
     # --- Grayscale ---
     BLACK = "#000000"
     DARK_GRAY_1 = "#434343"
