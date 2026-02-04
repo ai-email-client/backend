@@ -2,7 +2,8 @@ from enum import Enum
 from pydantic import BaseModel
 from typing import List
 
-from app.schemas.user import TokenData
+from app.schemas.color import Color
+
 
 INITIAL_LABELS = [
     {
@@ -12,8 +13,8 @@ INITIAL_LABELS = [
         "type": "user",
         "color": 
             {
-                "textColor": "#0d3472", 
-                "backgroundColor": "#b3d4ff"
+                "textColor": Color.BLUE_DARK.value, 
+                "backgroundColor": Color.BLUE_PALE.value
             }
     },
     {
@@ -23,8 +24,8 @@ INITIAL_LABELS = [
         "type": "user",
         "color": 
             {
-                "textColor": "#FFFFFF", 
-                "backgroundColor": "#000000"
+                "textColor": Color.WHITE.value, 
+                "backgroundColor": Color.BLACK.value
             }
     },
     {
@@ -34,8 +35,8 @@ INITIAL_LABELS = [
         "type": "user",
         "color": 
             {
-                "textColor": "#1f74ad", 
-                "backgroundColor": "#bce3ff"
+                "textColor": Color.BLUE_ROYAL.value, 
+                "backgroundColor": Color.BLUE_PALE.value
             }
     },
     {
@@ -45,8 +46,8 @@ INITIAL_LABELS = [
         "type": "user",
         "color": 
             {
-                "textColor": "#a32018", 
-                "backgroundColor": "#fad1cd"
+                "textColor": Color.RED_BRICK.value, 
+                "backgroundColor": Color.RED_SALMON.value
             }
     },
     {
@@ -56,8 +57,8 @@ INITIAL_LABELS = [
         "type": "user",
         "color": 
             {
-                "textColor": "#895000", 
-                "backgroundColor": "#ffdea2"
+                "textColor": Color.BROWN_GOLDEN.value, 
+                "backgroundColor": Color.APRICOT.value
             }
     },
     {
@@ -67,8 +68,8 @@ INITIAL_LABELS = [
         "type": "user",
         "color": 
             {
-                "textColor": "#434343", 
-                "backgroundColor": "#eeeeee"
+                "textColor": Color.DARK_GRAY_1.value, 
+                "backgroundColor": Color.OFF_WHITE_1.value
             }
     },
     {
@@ -78,8 +79,8 @@ INITIAL_LABELS = [
         "type": "user",
         "color": 
             {
-                "textColor": "#822600", 
-                "backgroundColor": "#ffb47b"
+                "textColor": Color.RED_DEEP.value, 
+                "backgroundColor": Color.PEACH.value
             }
     },
     {
@@ -89,8 +90,8 @@ INITIAL_LABELS = [
         "type": "user",
         "color": 
             {
-                "textColor": "#444444", 
-                "backgroundColor": "#dddddd"
+                "textColor": Color.DARK_GRAY_1.value, 
+                "backgroundColor": Color.OFF_WHITE_1.value
             }
     }
 ]

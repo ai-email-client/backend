@@ -40,7 +40,9 @@ from exception import (
     NoUserIdException,
     FlowExchangeError
 )
-        
+
+from app.schemas.category import INITIAL_LABELS
+
 class GmailProvider:
     def __init__(self, config: Config):
         self.config = config
