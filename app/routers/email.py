@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, HTTPException, Body, Depends
 from config import Config
 from typing import Dict, Any
 
+from app.schemas.user import UserRequest
+
 from app.schemas.email import (
-    EmailFetchRequest, EmailMessageRequest, EmailSummaryRequest, 
-    DifySummaryRequest,AttachmentRequest,GetRequest,
+    EmailFetchRequest, EmailMessageRequest, AttachmentRequest,
     MessageIdRequest, MessageBatchDeleteRequest
 )
 
@@ -15,6 +16,8 @@ from app.schemas.category import (
 
 from app.services.email import EmailService
 
+from app.utility import get_current_user
+
 router = APIRouter(
     prefix="/email",
     tags=["email"]
@@ -22,15 +25,14 @@ router = APIRouter(
 
 config = Config()
 
-
 @router.post("/initialize/labels")
 async def initialize_labels(
-    req: GetRequest
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.initialize_labels(req)
+        res = email_service.initialize_labels(current_user)
 
         return res
         
@@ -40,12 +42,14 @@ async def initialize_labels(
 
 @router.post("/messages")
 async def fetch_emails(
-    req: EmailFetchRequest
+    req: EmailFetchRequest,
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
+        print("current_user", current_user)
         email_service = EmailService(config)
 
-        return email_service.fetch_emails(req)
+        return email_service.fetch_emails(req, current_user)
         
     except Exception as e:
         print(e)
@@ -53,12 +57,13 @@ async def fetch_emails(
 
 @router.post("/list/plain-text")
 async def get_plain_text(
-    req: EmailFetchRequest
+    req: EmailFetchRequest,
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.get_plain_text(req)
+        res = email_service.get_plain_text(req, current_user)
 
         return res
         
@@ -68,27 +73,13 @@ async def get_plain_text(
 
 @router.post("/message/get")
 async def get_message_by_id(
-    req: EmailMessageRequest
+    req: EmailMessageRequest,
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.get_message_by_id(req)
-
-        return res
-        
-    except Exception as e:
-        print(e)
-        return HTTPException(status_code=500, detail=str(e))
-
-@router.post("/summary")
-async def get_summary(
-    req: EmailSummaryRequest
-):
-    try:
-        email_service = EmailService(config)
-
-        res = email_service.get_summary(req)
+        res = email_service.get_message_by_id(req, current_user)
 
         return res
         
@@ -98,42 +89,28 @@ async def get_summary(
 
 @router.post("/labels")
 async def get_labels(
-    req: GetRequest
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.get_labels(req)
+        res = email_service.get_labels(current_user)
 
         return res
         
     except Exception as e:
         print(e)
         return HTTPException(status_code=500, detail=str(e))
-
-@router.post("/user")
-async def get_user_profile(
-    req: GetRequest
-):
-    try:
-        email_service = EmailService(config)
-
-        res = email_service.get_user_profile(req)
-
-        return res
         
-    except Exception as e:
-        print(e)
-        return HTTPException(status_code=500, detail=str(e))
-
 @router.post("/message/attachment")
 async def get_attachments(
-    req: AttachmentRequest
+    req: AttachmentRequest,
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.get_attachments(req)
+        res = email_service.get_attachments(req, current_user)
 
         return res
         
@@ -143,12 +120,13 @@ async def get_attachments(
 
 @router.post("/label/create")
 async def create_label(
-    req: CreateLabelRequest
+    req: CreateLabelRequest,
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.create_label(req)
+        res = email_service.create_label(req, current_user)
 
         return res
         
@@ -158,12 +136,13 @@ async def create_label(
 
 @router.post("/label/get")
 async def get_label_by_id(
-    req: GetLabelRequest
+    req: GetLabelRequest,
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.get_label_by_id(req)
+        res = email_service.get_label_by_id(req, current_user)
 
         return res
         
@@ -173,12 +152,13 @@ async def get_label_by_id(
 
 @router.post("/message/modify")
 async def modify_label(
-    req: MessageModifyLabelRequest
+    req: MessageModifyLabelRequest,
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.message_modify_label(req)
+        res = email_service.message_modify_label(req, current_user)
 
         return res
         
@@ -188,12 +168,13 @@ async def modify_label(
 
 @router.post("/message/batch-modify")
 async def batch_modify_label(
-    req: MessageBatchModifyLabelRequest
+    req: MessageBatchModifyLabelRequest,
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.message_batch_modify_label(req)
+        res = email_service.message_batch_modify_label(req, current_user)
 
         return res
         
@@ -203,12 +184,13 @@ async def batch_modify_label(
 
 @router.post("/message/delete")
 async def delete_message(
-    req: MessageIdRequest
+    req: MessageIdRequest,
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.message_delete(req)
+        res = email_service.message_delete(req, current_user)
 
         return res
         
@@ -218,12 +200,13 @@ async def delete_message(
 
 @router.post("/message/batch-delete")
 async def batch_delete_message(
-    req: MessageBatchDeleteRequest
+    req: MessageBatchDeleteRequest,
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.message_batch_delete(req)
+        res = email_service.message_batch_delete(req, current_user)
 
         return res
         
@@ -233,12 +216,13 @@ async def batch_delete_message(
 
 @router.post("/message/trash")
 async def trash_message(
-    req: MessageIdRequest
+    req: MessageIdRequest,
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.message_trash(req)
+        res = email_service.message_trash(req, current_user)
 
         return res
         
@@ -248,12 +232,13 @@ async def trash_message(
 
 @router.post("/message/untrash")
 async def untrash_message(
-    req: MessageIdRequest
+    req: MessageIdRequest,
+    current_user: UserRequest = Depends(get_current_user)
 ):
     try:
         email_service = EmailService(config)
 
-        res = email_service.message_untrash(req)
+        res = email_service.message_untrash(req, current_user)
 
         return res
         

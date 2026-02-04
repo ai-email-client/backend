@@ -95,6 +95,15 @@ INITIAL_LABELS = [
     }
 ]
 
+class Category(Enum):
+    APPOINTMENT = "Appointment"
+    MEETING = "Meeting"
+    INVITATION = "Invitation"
+    INVOICE = "Invoice"
+    MARKETING = "Marketing"
+    NOTIFICATION = "Notification"
+    ANNOUNCEMENT = "Announcement"
+
 class MessageListVisibility(str, Enum):
     HIDE = "hide"
     SHOW = "show"

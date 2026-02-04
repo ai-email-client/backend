@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse
+from app.services.auth import AuthService
+from database import SupabaseDB
 from config import Config
-from app.providers.gmail import GmailProvider
-from app.providers.outlook import OutlookProvider
 
 router = APIRouter(
     prefix="/auth",
@@ -10,41 +10,26 @@ router = APIRouter(
 )
 
 config = Config()
+auth_service = AuthService(config)
 
 @router.get("/login/{provider}")
 async def login(provider: str):
-    if provider == "gmail":
-        provider_service = GmailProvider(config)
-    elif provider == "outlook":
-        provider_service = OutlookProvider(config)
-    else:
-        raise HTTPException(status_code=400, detail="Invalid provider")
     
-    auth_url = provider_service.login()
+    res = auth_service.get_authorization_url(provider)
+
+    url = res[0]
+    state = res[1]
     
-    return {"url": auth_url}
+    return {"url": url, "state": state}
 
 @router.get("/callback/{provider}")
 async def callback(
     provider: str,
+    state: str,
     code: str
 ):
     try:
-        if provider == "gmail":
-            provider_service = GmailProvider(config)
-        elif provider == "outlook":
-            provider_service = OutlookProvider(config)
-        else:
-            raise HTTPException(status_code=400, detail="Invalid provider")
-        
-        token_data = provider_service.exchange_code_for_token(code)
-
-        access_token = token_data['access_token']
-        refresh_token = token_data['refresh_token']
-
-        url = f"http://localhost:5173/#/?provider={provider}&access_token={access_token}&refresh_token={refresh_token}"
-        print(access_token)
-        print(refresh_token)
+        url = auth_service.handle_oauth_callback(provider, code, state)
         return RedirectResponse(url=url)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

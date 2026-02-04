@@ -1,7 +1,10 @@
 import requests
 import json
 from config import Config
-from app.schemas.email import DifySummaryRequest, EmailSummaryRequest
+from app.schemas.dify import (
+    DifySummaryRequest,
+    DifySummaryResponse
+)
 from app.utility import html_to_text
 
 class DifyService():
@@ -10,11 +13,6 @@ class DifyService():
     
     def get_summary(self, req: DifySummaryRequest):
         try:
-            req = DifySummaryRequest(
-                inputs=EmailSummaryRequest(email_text=req.inputs.email_text),
-                user="frontend-test",
-                response_mode="blocking"
-            )
             response = requests.post(
                 url=self.config.DIFY_URL,
                 headers={
@@ -23,7 +21,7 @@ class DifyService():
                 },
                 json=req.dict()
             )
-            response = response.json()["data"]["outputs"]["clean_email"]
-            return response
+            response = DifySummaryResponse(**response.json())
+            return response.clean_email
         except Exception as e:
             raise Exception(f"Error function get_summary: {str(e)}")

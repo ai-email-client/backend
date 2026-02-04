@@ -1,19 +1,7 @@
-import os
 from supabase import create_client, Client
 from config import Config
 
-class Database:
+class SupabaseDB:
     def __init__(self, config: Config):
-        self.supabase = create_client(config.SUPABASE_URL, config.SUPABASE_KEY)
-    
-    def insert(self, table: str, data: dict):
-        return self.supabase.table(table).insert(data).execute()
-    
-    def select(self, table: str, column: str, value: str):
-        return self.supabase.table(table).select(column).eq(column, value).execute()
-    
-    def update(self, table: str, column: str, value: str, data: dict):
-        return self.supabase.table(table).update(data).eq(column, value).execute()
-    
-    def delete(self, table: str, column: str, value: str):
-        return self.supabase.table(table).delete().eq(column, value).execute()
+        self.config = config
+        self.supabase: Client = create_client(self.config.SUPABASE_URL, self.config.SUPABASE_KEY)

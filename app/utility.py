@@ -2,10 +2,20 @@ import base64
 import re
 import datetime
 import unicodedata
+import jwt
+
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
 
 from typing import Dict, Any, Optional, List
 from bs4 import BeautifulSoup
 
+from fastapi import HTTPException
+
+from config import Config
+from app.schemas.user import UserRequest
+config = Config()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def decode_base64(data: str) -> str:
     try:
@@ -114,3 +124,35 @@ def html_to_text(html_content: str) -> str:
 
     return text
 
+def jwt_encode(payload: Dict[str, Any], secret_key: str):
+    try:
+        return jwt.encode(payload, secret_key, algorithm="HS256")
+    except Exception as e:
+        return HTTPException(status_code=400, detail=str(e))
+
+def jwt_decode(token: str, secret_key: str):
+    try:
+        return jwt.decode(token, secret_key, algorithms="HS256")
+    except Exception as e:
+        return HTTPException(status_code=400, detail=str(e))
+    
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
+        provider = payload.get("provider")
+        email_address = payload.get("email_address") # 👈 ตรงนี้ค่าที่ได้มาเป็น None
+        
+        # 1. เช็ค provider
+        if provider is None:
+            raise HTTPException(status_code=401, detail="Invalid Token: Missing provider")
+
+        # 2. ✅ เพิ่มการเช็ค email ตรงนี้ครับ
+        if email_address is None:
+            raise HTTPException(status_code=401, detail="Invalid Token: Missing email")
+            
+        return UserRequest(provider=provider, email_address=email_address)
+        
+    except Exception as e:
+        # อย่าลืมแก้ return เป็น raise นะครับ
+        print(f"Auth Error: {e}")
+        raise HTTPException(status_code=401, detail="Could not validate credentials")
