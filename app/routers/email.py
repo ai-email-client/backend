@@ -76,6 +76,7 @@ async def get_message_by_id(
     current_user: UserRequest = Depends(get_current_user)
 ):
     try:
+
         email_service = EmailService(config)
 
         res = email_service.get_message_by_id(req, current_user)

@@ -297,7 +297,7 @@ class GmailProvider:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
 
-            result = service.users().messages().get(userId='me',id=req.message_id).execute()
+            result = service.users().messages().get(userId='me',id=req.msg_id).execute()
             payload = result['payload']
             subject = utility.get_email_header(payload, 'Subject')
             sender = utility.get_email_header(payload, 'From')
@@ -321,7 +321,7 @@ class GmailProvider:
             attachments = utility.get_attachments(payload)
 
             return EmailDetailResponse(
-                msg_id=req.message_id,
+                msg_id=req.msg_id,
                 subject=subject,
                 sender=sender,
                 snippet=snippet,
@@ -432,7 +432,7 @@ class GmailProvider:
             results = service.users().messages().attachments().get(
                 userId='me', 
                 id=req.attachment_id,
-                messageId=req.message_id
+                messageId=req.msg_id
             ).execute()
             return results
         except Exception as e:

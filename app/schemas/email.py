@@ -32,7 +32,7 @@ class EmailFetchRequest(BaseModel):
     page_token: Optional[str] = None
     
 class EmailMessageRequest(BaseModel):
-    message_id: str
+    msg_id: str
 
 class EmailShortResponse(BaseModel):
     msg_id: str
