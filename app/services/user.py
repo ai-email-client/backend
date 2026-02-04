@@ -1,10 +1,11 @@
 from typing import List, Dict, Any
 from config import Config
-from app.database.supabase import SupabaseDB
 from app.providers.gmail import GmailProvider
 from app.providers.outlook import OutlookProvider
 from app.schemas.user import UserRequest
 from fastapi import HTTPException
+
+from database import SupabaseDB
 
 
 class UserService:
@@ -15,22 +16,13 @@ class UserService:
     def get_user_profile(self, req: UserRequest):
         if req.provider == "gmail":
             provider_service = GmailProvider(self.config)
-            creds = self.supabase.table("google_accounts").select(
-                "credentials"
-            ).eq(
-                "email_address", req.email_address
-            ).execute()
         elif req.provider == "outlook":
             provider_service = OutlookProvider(self.config)
-            creds = self.supabase.table("outlook_accounts").select(
-                "credentials"
-            ).eq(
-                "email_address", req.email_address
-            ).execute()
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
+        creds = provider_service.get_stored_credentials(req.email_address, self.supabase)
         res = provider_service.get_user_info(creds)
-        print(res)
+
         return res
         
 

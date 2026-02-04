@@ -20,7 +20,6 @@ async def profile(
     req: UserRequest = Depends(get_current_user)
 ):
     try:
-        print(req)
         res = user_service.get_user_profile(req)
         return res
     except Exception as e:
