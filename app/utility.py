@@ -27,14 +27,19 @@ def decode_base64(data: str) -> str:
         return ""
 
 def clean_html(html_content: str) -> str:
-
+    if not html_content:
+        return ""
     try:
         soup = BeautifulSoup(html_content, "html.parser")
-        
+
         for element in soup(["script", "style", "head", "meta", "noscript"]):
             element.extract()
 
-        return soup.get_text(separator=' ', strip=True)
+        text = soup.get_text(separator='\n')
+
+        lines = (line.strip() for line in text.splitlines())
+        clean_text = '\n'.join(line for line in lines if line)
+        return clean_text
     
     except Exception:
         return html_content

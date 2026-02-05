@@ -83,7 +83,6 @@ class GmailProvider:
     def verify_oauth2_token(self, 
         creds
     ):
-        time.sleep(2)
         return id_token.verify_oauth2_token(
             creds['id_token'], 
             requests.Request(), 
@@ -167,6 +166,7 @@ class GmailProvider:
         """
         try:
             credentials = self.exchange_code(authorization_code)
+            time.sleep(3)
             user_info = self.verify_oauth2_token(credentials)
             if credentials.get('refresh_token') is not None:
                 return self.store_credentials(user_info.get('email'), credentials, db)
@@ -319,7 +319,7 @@ class GmailProvider:
                 plain_text = utility.get_decode_by_mimetype(plain_text_part, 'text/plain')
                 plain_text = utility.clean_text(plain_text)
             else:
-                plain_text = None
+                plain_text = utility.clean_html(html)
 
             attachments = utility.get_attachments(payload)
 

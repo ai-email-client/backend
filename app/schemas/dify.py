@@ -12,6 +12,11 @@ class DifySummaryRequest(BaseModel):
     user: str="frontend-test"
     response_mode: str
 
+class DifySummaryBatchRequest(BaseModel):
+    inputs: List[EmailSummaryRequest]
+    user: str="frontend-test"
+    response_mode: str
+
 class DifySummary(BaseModel):
     sender: Sender
     email_category: str
