@@ -60,18 +60,6 @@ class EmailService:
 
         return res
 
-    def get_plain_text(self, req: EmailFetchRequest, current_user: UserRequest):
-        if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
-        elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
-        else:
-            raise HTTPException(status_code=400, detail="Invalid provider")
-        
-        res = provider_service.get_plain_text(req, current_user, self.db)
-
-        return res
-
     def get_labels(self, current_user: UserRequest):
         if current_user.provider == "gmail":
             provider_service = GmailProvider(self.config)

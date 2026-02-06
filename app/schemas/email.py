@@ -29,6 +29,7 @@ class AttachmentRequest(BaseModel):
 class EmailFetchRequest(BaseModel):
     label: List[Optional[str]] = ["INBOX"]
     limit: Optional[int] = 5    
+    query: Optional[str] = ''
     page_token: Optional[str] = None
     
 class EmailMessageRequest(BaseModel):

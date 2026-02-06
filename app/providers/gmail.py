@@ -256,7 +256,8 @@ class GmailProvider:
                 userId='me', 
                 maxResults=req.limit,
                 labelIds=req.label,
-                pageToken=req.page_token
+                pageToken=req.page_token,
+                q=req.query
                 ).execute()
             page_token = results.get('nextPageToken')
             messages_list = results.get('messages', [])
@@ -337,59 +338,6 @@ class GmailProvider:
 
         except Exception as e:
             raise Exception(f"Error function get_message_by_id: {str(e)}")
-
-    def get_plain_text(self, 
-        req: EmailFetchRequest,
-        current_user: UserRequest,
-        db: SupabaseDB
-    ) -> EmailFetchResponse: 
-        try:
-            credentials = self.get_stored_credentials(current_user.email_address, db)
-            service = self.build_service(credentials)
-
-            results = service.users().messages().list(
-                userId='me', 
-                maxResults=req.limit,
-                labelIds=req.label,
-                pageToken=req.page_token
-                ).execute()
-            page_token = results.get('nextPageToken')
-            messages = results.get('messages', [])
-
-            email_list = []
-            if not messages:
-                print("No messages found.")
-            else:
-                for msg in messages:
-                    results = service.users().messages().get(userId='me', id=msg['id']).execute()
-                    payload = results['payload']
-
-                    message_id = results['id']
-                    subject = utility.get_email_header(payload, 'Subject')
-                    sender = utility.get_email_header(payload, 'From')
-                    snippet = results['snippet']
-
-                    body = utility.get_part_by_mimetype(payload, 'text/html')
-                    if body is not None:
-                        body = utility.get_decode_by_mimetype(body, 'text/html')
-                        body = utility.clean_html(body)
-                        body = utility.clean_text(body)
-                    else:
-                        body = utility.get_part_by_mimetype(payload, 'text/plain')
-                        body = utility.get_decode_by_mimetype(body, 'text/plain')
-                        body = utility.clean_text(body)
-
-                    email_list.append(EmailPlainResponse(
-                        msg_id=message_id,
-                        plain_text=body,
-                        tag=results['labelIds'],
-                    ))
-            return EmailFetchPlainResponse(
-                emails=email_list,
-                page_token=page_token
-            )
-        except Exception as e:
-            raise Exception(f"Error function get_plain_text: {str(e)}")
 
     def get_labels(self, 
         current_user: UserRequest,
