@@ -1,7 +1,7 @@
 from typing import List, Dict, Any
 from config import Config
-from app.providers.gmail import GmailProvider
-from app.providers.outlook import OutlookProvider
+from app.api.gmail import GmailAPI
+from app.api.outlook import OutlookAPI
 from app.schemas.user import UserRequest
 from fastapi import HTTPException
 
@@ -15,9 +15,9 @@ class UserService:
 
     def get_user_profile(self, req: UserRequest):
         if req.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif req.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         creds = provider_service.get_stored_credentials(req.email_address, self.supabase)

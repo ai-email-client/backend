@@ -1,7 +1,7 @@
 
 from fastapi import HTTPException
-from app.providers.gmail import GmailProvider
-from app.providers.outlook import OutlookProvider
+from app.api.gmail import GmailAPI
+from app.api.outlook import OutlookAPI
 from app.services.dify import DifyService
 from config import Config
 from typing import Dict, Any
@@ -28,9 +28,9 @@ class EmailService:
 
     def initialize_labels(self, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -40,9 +40,9 @@ class EmailService:
     
     def fetch_emails(self, req: EmailFetchRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         res = provider_service.fetch_emails(req, current_user, self.db)
@@ -50,9 +50,9 @@ class EmailService:
     
     def get_message_by_id(self, req: EmailMessageRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
@@ -62,9 +62,9 @@ class EmailService:
 
     def get_labels(self, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -74,9 +74,9 @@ class EmailService:
     
     def get_user_profile(self, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -86,9 +86,9 @@ class EmailService:
     
     def get_attachments(self, req: AttachmentRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif req.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -98,9 +98,9 @@ class EmailService:
     
     def create_label(self, req: CreateLabelRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -110,9 +110,9 @@ class EmailService:
     
     def sync_labels(self, req: SyncLabelsRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -122,9 +122,9 @@ class EmailService:
     
     def get_label_by_id(self, req: GetLabelRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -134,9 +134,9 @@ class EmailService:
     
     def message_modify_label(self, req: MessageModifyLabelRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -146,9 +146,9 @@ class EmailService:
 
     def message_batch_modify_label(self, req: MessageBatchModifyLabelRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -158,9 +158,9 @@ class EmailService:
 
     def message_delete(self, req: MessageIdRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -170,9 +170,9 @@ class EmailService:
 
     def message_batch_delete(self, req: MessageBatchDeleteRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -182,9 +182,9 @@ class EmailService:
     
     def message_trash(self, req: MessageIdRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -194,9 +194,9 @@ class EmailService:
 
     def message_untrash(self, req: MessageIdRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         

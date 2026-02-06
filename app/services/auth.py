@@ -1,6 +1,6 @@
 import datetime
-from app.providers.gmail import GmailProvider
-from app.providers.outlook import OutlookProvider
+from app.api.gmail import GmailAPI
+from app.api.outlook import OutlookAPI
 from config import Config
 from typing import Dict, Any
 from fastapi import HTTPException
@@ -14,9 +14,9 @@ class AuthService:
 
     def get_authorization_url(self, provider: str):
         if provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -26,9 +26,9 @@ class AuthService:
 
     def handle_oauth_callback(self, provider: str, code: str, state: str):
         if provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
@@ -48,9 +48,9 @@ class AuthService:
 
     def get_user_info(self, provider: str, creds: Dict[str, Any]):
         if provider == "gmail":
-            provider_service = GmailProvider(self.config)
+            provider_service = GmailAPI(self.config)
         elif provider == "outlook":
-            provider_service = OutlookProvider(self.config)
+            provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
