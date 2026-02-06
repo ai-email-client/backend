@@ -4,18 +4,10 @@ from app.schemas.email import (
     Sender
 )
 
-class EmailSummaryRequest(BaseModel):
-    email_text: str
-
 class DifySummaryRequest(BaseModel):
-    inputs: EmailSummaryRequest
-    user: str="frontend-test"
-    response_mode: str
-
-class DifySummaryBatchRequest(BaseModel):
-    inputs: List[EmailSummaryRequest]
-    user: str="frontend-test"
-    response_mode: str
+    msg_id: str
+    plain_text: str
+    email_tags: List[str]
 
 class DifySummary(BaseModel):
     sender: Sender

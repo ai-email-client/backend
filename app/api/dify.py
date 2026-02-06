@@ -7,7 +7,7 @@ from app.schemas.dify import (
 )
 from app.utility import html_to_text
 
-class DifyService():
+class DifyAPI():
     def __init__(self, config: Config):
         self.config = config
     
@@ -19,7 +19,7 @@ class DifyService():
                     "Authorization": f"Bearer {self.config.DIFY_API_KEY}",
                     "Content-Type": "application/json"
                 },
-                json=req.dict()
+                json=req.model_dump_json()
             )
             response = DifySummaryResponse(**response.json())
             return response.clean_email
