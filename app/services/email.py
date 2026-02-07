@@ -203,3 +203,25 @@ class EmailService:
         res = provider_service.message_untrash(req, current_user, self.db)
 
         return res
+
+    def draft_create(
+        self,
+        req: DraftCreateRequest,
+        current_user: UserRequest
+    ):
+        pass
+    
+    def draft_delete():
+        pass
+    
+    def draft_get():
+        pass
+    
+    def draft_list():
+        pass
+    
+    def draft_send():
+        pass
+    
+    def draft_update():
+        pass

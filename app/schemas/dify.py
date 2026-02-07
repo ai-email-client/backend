@@ -4,11 +4,6 @@ from app.schemas.email import (
     Sender
 )
 
-class DifySummaryRequest(BaseModel):
-    msg_id: str
-    plain_text: str
-    email_tags: List[str]
-
 class DifySummary(BaseModel):
     sender: Sender
     email_category: str
@@ -27,5 +22,3 @@ class DifySummary(BaseModel):
     extraction_status: str
     confidence: float
 
-class DifySummaryResponse(BaseModel):
-    clean_email: DifySummary

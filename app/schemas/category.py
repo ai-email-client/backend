@@ -42,29 +42,6 @@ class Category(BaseModel):
     threadsUnread: int | None = None
     color: CategoryColor | None = None
 
-class CategoryListResponse(BaseModel):
-    categories: List[Category]
-
-class CreateLabelRequest(BaseModel):
-    body: Category
-
-class GetLabelRequest(BaseModel):
-    id: str
-
-class SyncLabelsRequest(BaseModel):
-    names: List[str]
-
-class MessageBatchModifyLabelRequest(BaseModel):
-    ids: List[str]
-    addLabelIds: List[str] = []
-    removeLabelIds: List[str] = []
-
-class MessageModifyLabelRequest(BaseModel):
-    id: str
-    addLabelIds: List[str] = []
-    removeLabelIds: List[str] = []
-
-
 INITIAL_LABELS = {
     "appointment": {
         "name": "appointment",

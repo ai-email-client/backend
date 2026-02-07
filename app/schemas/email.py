@@ -7,69 +7,45 @@ class Attachment(BaseModel):
     mimeType: str
     size: int
     attachmentId: Optional[str] = None
- 
+
+class ClassificationLabelFieldValue(BaseModel):
+    fieldId: str
+    selection: str
+
+class ClassificationLabelValue(BaseModel):
+    labelId: str
+    fields: List[ClassificationLabelFieldValue]
+
+class Header(BaseModel):
+    name: str
+    value: str
+
+class MessagePartBody(BaseModel):
+    attachmentId: str
+    size: int
+    data: str
+
+class MessagePart(BaseModel):
+    partId: str
+    mimeType: str
+    filename: str
+    headers: List[Header]
+    body: MessagePartBody
+    parts: List[MessagePart]
+
+class Message(BaseModel):
+    id: str
+    threadId: str
+    labelIds: List[str]
+    snippet: str
+    historyId: str
+    internalDate: str
+    payload: MessagePart
+    sizeEstimate: int
+    raw: str
+    classificationLabelValues: List[ClassificationLabelValue]
+
 class Sender(BaseModel):
     name: str
     type: str
-   
-class EmailAccountCreate(BaseModel):
-    email: str
 
-class EmailAccountResponse(BaseModel):
-    email: str
-
-    class Config:
-        from_attributes = True
-    
-
-class AttachmentRequest(BaseModel):
-    msg_id: str
-    attachment_id: str
-
-class EmailFetchRequest(BaseModel):
-    label: List[Optional[str]] = ["INBOX"]
-    limit: Optional[int] = 5    
-    query: Optional[str] = ''
-    page_token: Optional[str] = None
-    
-class EmailMessageRequest(BaseModel):
-    msg_id: str
-
-class EmailShortResponse(BaseModel):
-    msg_id: str
-    subject: str
-    sender: str
-    snippet: str
-    time: str
-    tag: List[str]
-    attachments: List[Attachment]
-
-class EmailFetchResponse(BaseModel):
-    page_token: Optional[str] = None
-    messages: List[EmailShortResponse]
-
-class EmailDetailResponse(BaseModel):
-    msg_id: str
-    subject: str
-    sender: str
-    snippet: str
-    html: Optional[str] = None
-    plain_text: Optional[str] = None
-    time: str
-    tag: List[str]
-    attachments: List[Attachment]
-
-class EmailPlainResponse(BaseModel):
-    msg_id: str
-    plain_text: Optional[str] = None
-    tag: List[str]
-
-class EmailFetchPlainResponse(BaseModel):
-    messages: List[EmailPlainResponse]
-    page_token: Optional[str] = None
-
-class MessageIdRequest(BaseModel):
-    id: str
-
-class MessageBatchDeleteRequest(BaseModel):
-    ids: List[str]
