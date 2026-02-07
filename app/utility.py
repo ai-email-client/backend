@@ -42,11 +42,13 @@ def clean_html(html_content: str) -> str:
         return html_content
 
 def clean_text(text: str) -> str:
-
     if not text:
         return ""
 
     text = unicodedata.normalize('NFKC', text)
+
+    text = re.sub(r'\[https?://[^\]]+\]', '', text)
+    text = re.sub(r'https?://\S+', '', text)
 
     text = re.sub(r'[\u200b\u200c\u200d\u2060\ufeff\u00ad\u034f\u2007]', '', text)
 
@@ -54,6 +56,7 @@ def clean_text(text: str) -> str:
     text = re.sub(r'[\t\xa0]', ' ', text)
     text = text.replace('\r', '')
     text = re.sub(r' +', ' ', text)
+    
     lines = [line.strip() for line in text.split('\n')]
     text = '\n'.join(lines)
     text = re.sub(r'\n{3,}', '\n\n', text)

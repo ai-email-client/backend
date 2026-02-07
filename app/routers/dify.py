@@ -34,7 +34,6 @@ async def test_summary(
         dify_service = DifyService(config)
 
         res = dify_service.get_summary(req)
-        print(res)
 
         return res
     except Exception as e:

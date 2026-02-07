@@ -23,9 +23,9 @@ class DifySummary(BaseModel):
     is_spam: Optional[bool] = None
     is_threat: Optional[bool] = None
     spam_type: Optional[str] = None
-    spam_confidence: Optional[int] = None
+    spam_confidence: Optional[float] = None
     security_type: Optional[str] = None
-    security_confidence: Optional[int] = None
+    security_confidence: Optional[float] = None
     extraction_status: Optional[str] = None
     confidence: Optional[float] = None
 

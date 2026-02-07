@@ -31,6 +31,7 @@ class DifyAPI():
                 },
                 json=payload
             )
+            print(response.json())
             
             return DifyResponse(**response.json())
         except Exception as e:
