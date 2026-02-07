@@ -21,7 +21,7 @@ class DifyService():
     def get_summary(self, req: DifySummaryRequest):
         res = self.db.select(
             table='source_emails',
-            columns='msg_id , plain_text, email_tags, status',
+            columns='id, msg_id , plain_text, email_tags, status',
             filters={'msg_id': req.msg_id}
         )
         
@@ -33,10 +33,28 @@ class DifyService():
                 'status': Status.new
             }
             )
-            # dify_api = DifyAPI(self.config)
-            # summary = dify_api.get_summary(req)
-            return res
-            
+                
+            dify_api = DifyAPI(self.config)
+            summary = dify_api.get_summary(req)
+
+            is_success = False
+            if summary.data.error is None :
+                is_success = True
+
+            new_status = Status.done if is_success else Status.error
+            res = self.db.update(
+                table='source_emails',
+                data={'status': new_status},
+                filters={'msg_id': req.msg_id}
+            )
+            self.db.insert('email_ai_analysis',
+                {
+                    'source_email_id': res[0].get('id'),
+                    **summary.data.outputs.clean_email.model_dump()
+                }
+            )
+
+            return summary.data.outputs.clean_email          
         else:
             if res and res[0].get('status') == Status.new: 
                 
@@ -61,7 +79,12 @@ class DifyService():
                 )
 
                 return summary.data.outputs.clean_email
-
-
+            elif res[0].get('status') == Status.done:
+                return self.db.select(
+                    table='email_ai_analysis',
+                    columns="sender, email_category, date, time, location, instructions, required_items, summary, is_spam, is_threat, spam_type, spam_confidence, security_type, security_confidence, extraction_status, confidence",
+                    filters={'source_email_id': res[0].get('id')}
+                )
+            
             return res
         
