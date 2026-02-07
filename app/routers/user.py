@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException, status
 from app.services.user import UserService
-from app.schemas.user import UserRequest
 from typing import Dict, Any
 from config import Config
+from fastapi import Depends
 
 from app.utility import get_current_user
-from fastapi import Depends
+from app.schemas.request import UserRequest
 
 router = APIRouter(
     prefix="/user",

@@ -1,9 +1,10 @@
 from typing import List, Dict, Any
 from config import Config
+from fastapi import HTTPException
+
 from app.api.gmail import GmailAPI
 from app.api.outlook import OutlookAPI
-from app.schemas.user import UserRequest
-from fastapi import HTTPException
+from app.schemas.request import UserRequest
 
 from database import SupabaseDB
 

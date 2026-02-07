@@ -4,10 +4,34 @@ from app.schemas.dify import DifySummary
 from app.schemas.email import Attachment
 from app.schemas.category import Category
 
+class CredentialResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    scopes: list[str]
+    id_token: str
+    token_type: str
+    expires_in: int
+    expires_at: int
 
-
-class DifySummaryResponse(BaseModel):
+class DifyOutputs(BaseModel):
     clean_email: DifySummary
+
+class DifyDataResponse(BaseModel):
+    id: str
+    workflow_id: str
+    status: str
+    outputs: DifyOutputs
+    error: Optional[str] = None
+    elapsed_time: float
+    total_tokens: int
+    total_steps: int
+    created_at: int
+    finished_at: int
+
+class DifyResponse(BaseModel):
+    task_id: str
+    workflow_run_id: str
+    data: DifyDataResponse
     
 class EmailShortResponse(BaseModel):
     msg_id: str

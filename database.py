@@ -1,41 +1,65 @@
-from supabase import create_client, Client
+from typing import List, Dict, Any, Optional
 from config import Config
+from supabase import Client
 
 class SupabaseDB:
     def __init__(self, config: Config):
-        self.config = config
-        self.supabase: Client = create_client(self.config.SUPABASE_URL, self.config.SUPABASE_KEY)
-        
-    def select(self, table: str, columns: str, filters: dict):
+        self.supabase = Client(
+            config.SUPABASE_URL,
+            config.SUPABASE_KEY
+        )
+
+    def select(self, table: str, columns: str = "*", filters: Optional[Dict[str, Any]] = None) -> List[Dict]:
         try:
             query = self.supabase.table(table).select(columns)
-            for key, value in filters.items():
-                query = query.eq(key, value)
+            
+            if filters:
+                for key, value in filters.items():
+                    query = query.eq(key, value)
+            
             response = query.execute()
-            return response
+            return response.data
         except Exception as e:
-            raise Exception(f"Error selecting from {table}: {str(e)}")
+            raise Exception(f"Select Error ({table}): {str(e)}")
 
-    def insert(self, table: str, data: dict):
+    def insert(self, table: str, data: Dict[str, Any] | List[Dict[str, Any]]) -> List[Dict]:
+
         try:
             response = self.supabase.table(table).insert(data).execute()
-            return response
+            return response.data
         except Exception as e:
-            raise Exception(f"Error inserting into {table}: {str(e)}")
-        
-    def update(self, table: str, data: dict, filters: dict):
+            raise Exception(f"Insert Error ({table}): {str(e)}")
+
+    def update(self, table: str, data: Dict[str, Any], filters: Dict[str, Any]) -> List[Dict]:
+
         try:
-            query = self.supabase.table(table)
+            query = self.supabase.table(table).update(data)
+            
             for key, value in filters.items():
                 query = query.eq(key, value)
-            response = query.update(data).execute()
-            return response
+                
+            response = query.execute()
+            return response.data
         except Exception as e:
-            raise Exception(f"Error updating {table}: {str(e)}")
-    
-    def upsert(self, table: str, data: dict, conflict_target: str):
+            raise Exception(f"Update Error ({table}): {str(e)}")
+
+    def upsert(self, table: str, data: Dict[str, Any], conflict_target: Optional[str] = None) -> List[Dict]:
+
         try:
-            response = self.supabase.table(table).upsert(data, on_conflict=conflict_target).execute()
-            return response
+            opts = {'on_conflict': conflict_target} if conflict_target else {}
+            
+            response = self.supabase.table(table).upsert(data, **opts).execute()
+            return response.data
         except Exception as e:
-            raise Exception(f"Error upserting into {table}: {str(e)}")
+            raise Exception(f"Upsert Error ({table}): {str(e)}")
+            
+    def delete(self, table: str, filters: Dict[str, Any]) -> List[Dict]:
+        try:
+            query = self.supabase.table(table).delete()
+            for key, value in filters.items():
+                query = query.eq(key, value)
+            
+            response = query.execute()
+            return response.data
+        except Exception as e:
+            raise Exception(f"Delete Error ({table}): {str(e)}")

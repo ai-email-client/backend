@@ -3,17 +3,14 @@ import re
 import datetime
 import unicodedata
 import jwt
-
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
-
 from typing import Dict, Any, Optional, List
 from bs4 import BeautifulSoup
-
 from fastapi import HTTPException
-
 from config import Config
-from app.schemas.user import UserRequest
+from app.schemas.request import UserRequest
+
 config = Config()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

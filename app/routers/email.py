@@ -2,15 +2,10 @@ from fastapi import APIRouter, HTTPException, Body, Depends
 from config import Config
 from typing import Dict, Any
 
-from app.schemas.user import UserRequest
-
-from app.schemas.email import (
-    EmailFetchRequest, EmailMessageRequest, AttachmentRequest,
-    MessageIdRequest, MessageBatchDeleteRequest
-)
-
-from app.schemas.category import (
-    CreateLabelRequest, MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
+from app.schemas.request import (
+    UserRequest, EmailFetchRequest, EmailMessageRequest, AttachmentRequest,
+    MessageIdRequest, MessageBatchDeleteRequest, CreateLabelRequest, 
+    MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
     GetLabelRequest, SyncLabelsRequest
 )
 

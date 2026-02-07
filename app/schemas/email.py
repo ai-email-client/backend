@@ -31,7 +31,7 @@ class MessagePart(BaseModel):
     filename: str
     headers: List[Header]
     body: MessagePartBody
-    parts: List[MessagePart]
+    parts: List[Dict[str, Any]]
 
 class Message(BaseModel):
     id: str
@@ -46,6 +46,5 @@ class Message(BaseModel):
     classificationLabelValues: List[ClassificationLabelValue]
 
 class Sender(BaseModel):
-    name: str
-    type: str
-
+    name: Optional[str] = None
+    type: Optional[str] = None

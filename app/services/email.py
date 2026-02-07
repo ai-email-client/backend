@@ -8,18 +8,13 @@ from typing import Dict, Any
 from app.utility import clean_html
 from database import SupabaseDB
 
-from app.schemas.email import (
+from app.schemas.request import (
     EmailFetchRequest, EmailMessageRequest, 
     AttachmentRequest,
-    MessageIdRequest, MessageBatchDeleteRequest
-)
-
-from app.schemas.category import (
+    MessageIdRequest, MessageBatchDeleteRequest,
     CreateLabelRequest, MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
-    GetLabelRequest, SyncLabelsRequest
+    GetLabelRequest, SyncLabelsRequest,UserRequest,DraftCreateRequest
 )
-
-from app.schemas.user import UserRequest
 
 class EmailService:
     def __init__(self, config: Config):

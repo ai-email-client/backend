@@ -1,6 +1,7 @@
 from typing import List,Optional
 from pydantic import BaseModel
 from app.schemas.category import Category
+from app.schemas.email import Message
 
 class UserRequest(BaseModel):
     email_address: str
@@ -48,3 +49,7 @@ class MessageModifyLabelRequest(BaseModel):
     id: str
     addLabelIds: List[str] = []
     removeLabelIds: List[str] = []
+
+class DraftCreateRequest(BaseModel):
+    id: str
+    message: Message

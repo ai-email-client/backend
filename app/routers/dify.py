@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from config import Config
 from app.services.dify import DifyService
-from app.schemas.dify import DifySummaryRequest
+from app.schemas.request import (
+    DifySummaryRequest
+)
 
 router = APIRouter(
     prefix="/dify",

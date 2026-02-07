@@ -14,26 +14,24 @@ from config import Config
 from app import utility
 from database import SupabaseDB
 
-from app.schemas.auth import (
-    CredentialResponse
-)
-
-from app.schemas.email import (
-    EmailShortResponse, Attachment,EmailDetailResponse, 
-    EmailFetchRequest, EmailMessageRequest,EmailPlainResponse,
-    EmailFetchPlainResponse,AttachmentRequest,
-    MessageIdRequest, MessageBatchDeleteRequest, EmailFetchResponse
-)
-
-from app.schemas.category import (
-    Category,CategoryListResponse,MessageListVisibility,
-    LabelListVisibility,CategoryType,CategoryColor,
-    CreateLabelRequest, GetLabelRequest,
+from app.schemas.request import (
+    EmailFetchRequest, EmailMessageRequest,
+    AttachmentRequest, MessageIdRequest, MessageBatchDeleteRequest, 
+    GetLabelRequest, UserRequest, CreateLabelRequest, 
     MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
     SyncLabelsRequest
 )
 
-from app.schemas.user import UserRequest
+from app.schemas.response import (
+    CredentialResponse,EmailDetailResponse,EmailShortResponse, 
+    EmailFetchResponse, EmailPlainResponse, EmailFetchPlainResponse,
+    CategoryListResponse
+)
+
+from app.schemas.category import (
+    Category,MessageListVisibility,
+    LabelListVisibility,CategoryType,CategoryColor
+)
 
 from exception import (
     CodeExchangeException,
@@ -189,13 +187,13 @@ class GmailAPI:
             Stored oauth2client.client.OAuth2Credentials if found, None otherwise.
         """
         try:
-            res = db.supabase.table("google_accounts").select(
-                "credentials"
-            ).eq(
-                "email_address", email_address
-            ).execute()
-            if res.data:
-                return res.data[0]['credentials']
+            res = db.select(
+                "google_accounts",
+                "credentials",
+                {"email_address": email_address}
+            )
+            if res:
+                return res[0]['credentials']
             return None
 
         except Exception as e:
@@ -217,12 +215,16 @@ class GmailAPI:
             credentials: OAuth 2.0 credentials to store.
         """
         try:
-            res = db.supabase.table("google_accounts").upsert({
-                "email_address": email_address,
-                "credentials": credentials,
-                "updated_at": "now()"
-            },on_conflict="email_address").execute()
-            return res.data[0]['credentials']
+            res = db.upsert(
+                "google_accounts",
+                {
+                    "email_address": email_address,
+                    "credentials": credentials,
+                    "updated_at": "now()"
+                },
+                "email_address"
+            )
+            return res[0]['credentials']
         except Exception as e:
             print(f"Error: {e}")
     
