@@ -18,7 +18,8 @@ class DifyService():
         self.config = config
         self.db = SupabaseDB(config)
     
-    def get_summary(self, req: DifySummaryRequest):
+    def get_summary(self, req: DifySummaryRequest, user_email: str):
+        print("Test Function")
         res = self.db.select(
             table='source_emails',
             columns='id, msg_id , plain_text, email_tags, status',
@@ -30,9 +31,11 @@ class DifyService():
                 'msg_id': req.msg_id,
                 'plain_text': req.plain_text,
                 'email_tags': req.email_tags,
-                'status': Status.new
+                'status': Status.new,
+                'user_email_address': user_email
             }
             )
+            print(res)
                 
             dify_api = DifyAPI(self.config)
             summary = dify_api.get_summary(req)

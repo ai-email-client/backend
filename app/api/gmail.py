@@ -84,7 +84,8 @@ class GmailAPI:
         return id_token.verify_oauth2_token(
             creds['id_token'], 
             requests.Request(), 
-            audience=self.config.GOOGLE_CLIENT_ID
+            audience=self.config.GOOGLE_CLIENT_ID,
+            clock_skew_in_seconds=10
         )
 
     def exchange_code(self, 
@@ -164,7 +165,6 @@ class GmailAPI:
         """
         try:
             credentials = self.exchange_code(authorization_code)
-            time.sleep(3)
             user_info = self.verify_oauth2_token(credentials)
             if credentials.get('refresh_token') is not None:
                 return self.store_credentials(user_info.get('email'), credentials, db)
@@ -408,7 +408,7 @@ class GmailAPI:
         req: CreateLabelRequest,
         current_user: UserRequest,
         db: SupabaseDB
-    ):
+    ) -> Category:
         try:
             body = {
                 "name": req.body.name,
@@ -439,11 +439,25 @@ class GmailAPI:
             service = self.build_service(credentials)
             existing_labels = service.users().labels().list(userId='me').execute()
             for name in req.names:
-                if name in INITIAL_LABELS and name not in [label['name'] for label in existing_labels['labels']]:
-                    body = INITIAL_LABELS[name]
+                print("Syncing label:", name)
+                if name.lower() in INITIAL_LABELS and name not in [label['name'] for label in existing_labels['labels']]:
+                    print("Creating label:", name)
+                    body = INITIAL_LABELS[name.lower()]
                     results.append(service.users().labels().create(userId='me', body=body).execute())
             return results
-        except Exception as e:
+        except google_api_errors.HttpError as e:
+            if e.resp.status == 429:
+                raise Exception("Rate limit exceeded. Please try again later.")
+            if e.resp.status == 401:
+                raise Exception("Unauthorized. Please try again later.")
+            if e.resp.status == 404:
+                raise Exception("Resource not found. Please try again later.")
+            if e.resp.status == 409:
+                raise Exception("Conflict error. Please try again later.")
+            if e.resp.status >= 400 and e.resp.status < 500:
+                raise Exception("Bad request. Please try again later.")
+            if e.resp.status >= 500:
+                raise Exception("Google server error. Please try again later.")
             raise Exception(f"Error function sync_labels: {str(e)}")
 
     def message_modify_label(self, 

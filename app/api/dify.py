@@ -31,7 +31,9 @@ class DifyAPI():
                 },
                 json=payload
             )
-            
+            if response.json().get("error"):
+                print(response.json())
+                raise Exception(f"Error function get_summary: {response.json().get('error')}")
             return DifyResponse(**response.json())
         except Exception as e:
             raise Exception(f"Error function get_summary: {str(e)}")

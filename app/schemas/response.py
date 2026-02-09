@@ -20,7 +20,7 @@ class DifyDataResponse(BaseModel):
     id: str
     workflow_id: str
     status: str
-    outputs: DifyOutputs
+    outputs: Optional[DifyOutputs] = None
     error: Optional[str] = None
     elapsed_time: float
     total_tokens: int
@@ -31,7 +31,7 @@ class DifyDataResponse(BaseModel):
 class DifyResponse(BaseModel):
     task_id: str
     workflow_run_id: str
-    data: DifyDataResponse
+    data: DifyDataResponse | None
     
 class EmailShortResponse(BaseModel):
     msg_id: str
