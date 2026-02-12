@@ -25,7 +25,17 @@ class UserService:
         res = provider_service.get_user_info(creds)
 
         return res
-        
+    
+    def setup_pin(self, req: UserRequest, pin: str):
+        try:
+            res = self.supabase.update(
+                table='users',
+                data={'pin': pin},
+                filters={'email_address': req.email_address}
+            )
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        return res
 
 
         
