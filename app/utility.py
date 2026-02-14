@@ -1,4 +1,6 @@
 import base64
+import hashlib
+import hmac
 import re
 import datetime
 import unicodedata
@@ -157,3 +159,15 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         
     except Exception as e:
         raise HTTPException(status_code=401, detail="Could not validate credentials")
+
+def hash_pin_backend(pin: str) -> str:
+    SECRET_SALT = config.SECRET_KEY
+    salted_pin = pin + SECRET_SALT
+    
+    hashed = hashlib.sha256(salted_pin.encode('utf-8')).hexdigest()
+    return hashed
+
+def verify_pin(plain_pin: str, stored_hash: str) -> bool:
+    new_hash = hash_pin_backend(plain_pin)
+    
+    return hmac.compare_digest(new_hash, stored_hash)
