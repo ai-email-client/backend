@@ -13,10 +13,10 @@ class DifyAPI():
     def __init__(self, config: Config):
         self.config = config
     
-    def get_summary(self, req: DifySummaryRequest) -> DifyResponse:
+    def get_summary(self, plain_text: str) -> DifyResponse:
         payload = {
             "inputs": {
-                "email_text": req.plain_text,
+                "email_text": plain_text,
             },
             "response_mode": "blocking",
             "user": "frontend-test"
@@ -31,9 +31,7 @@ class DifyAPI():
                 },
                 json=payload
             )
-            if response.json().get("error"):
-                print(response.json())
-                raise Exception(f"Error function get_summary: {response.json().get('error')}")
             return DifyResponse(**response.json())
         except Exception as e:
-            raise Exception(f"Error function get_summary: {str(e)}")
+            print(f"Error in DifyAPI.get_summary: {e}")
+            return None

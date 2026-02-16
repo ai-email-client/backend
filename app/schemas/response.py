@@ -14,7 +14,7 @@ class CredentialResponse(BaseModel):
     expires_at: int
 
 class DifyOutputs(BaseModel):
-    clean_email: DifySummary
+    clean_email: Optional[DifySummary] = None
 
 class DifyDataResponse(BaseModel):
     id: str

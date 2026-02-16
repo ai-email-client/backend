@@ -29,7 +29,7 @@ class UserService:
     def setup_pin(self, req: UserRequest, pin: str):
         try:
             res = self.supabase.update(
-                table='users',
+                table='google_accounts',
                 data={'pin': pin},
                 filters={'email_address': req.email_address}
             )
@@ -37,6 +37,20 @@ class UserService:
             raise HTTPException(status_code=400, detail=str(e))
         return res
 
+    def verify_pin(self, req: UserRequest, pin: str):
+        try:
+            res = self.supabase.get(
+                table='google_accounts',
+                filters={'email_address': req.email_address}
+            )
+            if not res or 'data' not in res or len(res['data']) == 0:
+                raise HTTPException(status_code=404, detail="User not found")
+            stored_pin = res['data'][0].get('pin')
+            if stored_pin is None:
+                raise HTTPException(status_code=400, detail="PIN not set for user")
+            return stored_pin == pin
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
         
 

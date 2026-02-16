@@ -11,6 +11,13 @@ class DifySummaryRequest(BaseModel):
     msg_id: str
     plain_text: str
     email_tags: List[str]
+    
+class DataInsertSummaryRequest(BaseModel):
+    id: str
+    msg_id: str
+    plain_text: str
+    email_tags: List[str]
+    user_email_address: str
 
 class AttachmentRequest(BaseModel):
     msg_id: str
