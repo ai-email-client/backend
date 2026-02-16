@@ -4,6 +4,14 @@ from app.schemas.dify import DifySummary
 from app.schemas.email import Attachment
 from app.schemas.category import Category
 
+class SourceEmailResponse(BaseModel):
+    id: str
+    msg_id: str
+    plain_text: str
+    email_tags: List[str]
+    status: str
+    user_email_address: str
+
 class CredentialResponse(BaseModel):
     access_token: str
     refresh_token: str

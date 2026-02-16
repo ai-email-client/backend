@@ -18,7 +18,10 @@ async def get_summary(
     service: DatabaseService = Depends(get_db)
 ):
     try:
-        res = service.get_summary(msg_id, current_user.email_address)
+        source_email = service.get_source_email(msg_id, current_user.email_address)
+        if source_email is None:
+            raise HTTPException(status_code=404, detail="Source email not found for the given msg_id and user")
+        res = service.get_summary(source_email.id)
 
         return res
     except Exception as e:

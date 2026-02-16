@@ -1,5 +1,6 @@
 from app.schemas.dify import Status
 from app.schemas.request import DifySummaryRequest
+from app.schemas.response import SourceEmailResponse
 from config import Config
 from database import SupabaseDB
 
@@ -9,30 +10,45 @@ class DatabaseService():
         self.db = db
     
     def get_summary(self, 
-                    msg_id: str,
-                    email_address: str
+                    source_email_id: str,
                     ):
+        columns = [
+                    "source_email_id","sender","email_category",
+                    "date","time","location","instructions","required_items",
+                    "summary","is_spam","is_threat",
+                    "spam_type","spam_confidence",
+                    "security_type","security_confidence",
+                    "extraction_status","confidence"
+                ]
+        columns_str = ', '.join(columns)
+            
+        res = self.db.select(
+            table='email_ai_analysis',
+            columns = columns_str,
+            filters={
+                'source_email_id': source_email_id
+                }
+            )
+        return res
+    
+    def get_source_email(self,                     
+                        msg_id: str,
+                        email_address: str
+        ):
+        columns = [ "id","msg_id","plain_text","email_tags","status","user_email_address" ]
+        columns_str = ', '.join(columns)
+        
         res = self.db.select(
             table='source_emails',
-            columns='id',
+            columns=columns_str,
             filters={
-                'msg_id': msg_id, 
+                'msg_id': msg_id,
                 'user_email_address': email_address
                 }
             )
-        if res and 'data' in res and len(res['data']) > 0:
-            source_email_id = res['data'][0].get('id')
-            analysis_res = self.db.select(
-                table='email_ai_analysis',
-                columns='*',
-                filters={
-                    'source_email_id': source_email_id
-                    }
-                )
-            return analysis_res
-        
+        if res and len(res) > 0:
+            return SourceEmailResponse(**res[0])
         return None
-
     
     def get_user_pin(self, email_address: str):
         res = self.db.select(
@@ -57,15 +73,4 @@ class DatabaseService():
                 
             }
         )
-        return res
-    
-    def get_email_source(self, req: DifySummaryRequest, user_email:str):
-        res = self.db.select(
-            table='source_emails',
-            columns='id, msg_id, plain_text, email_tags, status, user_email_address',
-            filters={
-                'msg_id': req.msg_id,
-                'user_email_address': user_email
-                }
-            )
         return res
