@@ -1,12 +1,9 @@
 
+from config import Config
+from database import SupabaseDB
 from fastapi import HTTPException
 from app.api.gmail import GmailAPI
 from app.api.outlook import OutlookAPI
-from app.services.dify import DifyService
-from config import Config
-from typing import Dict, Any
-from app.utility import clean_html
-from database import SupabaseDB
 
 from app.schemas.request import (
     EmailFetchRequest, EmailMessageRequest, 
@@ -17,9 +14,9 @@ from app.schemas.request import (
 )
 
 class EmailService:
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, db: SupabaseDB = None):
         self.config = config
-        self.db = SupabaseDB(config)
+        self.db = db
 
     def initialize_labels(self, current_user: UserRequest):
         if current_user.provider == "gmail":

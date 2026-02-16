@@ -5,16 +5,10 @@ import re
 import datetime
 import unicodedata
 import jwt
-from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
-from typing import Dict, Any, Optional, List
+
+from typing import Dict, Any, Optional
 from bs4 import BeautifulSoup
 from fastapi import HTTPException
-from config import Config
-from app.schemas.request import UserRequest
-
-config = Config()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def decode_base64(data: str) -> str:
     try:
@@ -142,32 +136,14 @@ def jwt_decode(token: str, secret_key: str):
         return jwt.decode(token, secret_key, algorithms="HS256")
     except Exception as e:
         return HTTPException(status_code=400, detail=str(e))
-    
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
-        provider = payload.get("provider")
-        email_address = payload.get("email_address")
-        
-        if provider is None:
-            raise HTTPException(status_code=401, detail="Invalid Token: Missing provider")
 
-        if email_address is None:
-            raise HTTPException(status_code=401, detail="Invalid Token: Missing email")
-            
-        return UserRequest(provider=provider, email_address=email_address)
-        
-    except Exception as e:
-        raise HTTPException(status_code=401, detail="Could not validate credentials")
-
-def hash_pin_backend(pin: str) -> str:
-    SECRET_SALT = config.SECRET_KEY
-    salted_pin = pin + SECRET_SALT
+def hash_pin_backend(pin: str, salt: str) -> str:
+    salted_pin = pin + salt
     
     hashed = hashlib.sha256(salted_pin.encode('utf-8')).hexdigest()
     return hashed
 
-def verify_pin(plain_pin: str, stored_hash: str) -> bool:
-    new_hash = hash_pin_backend(plain_pin)
+def verify_pin(plain_pin: str, stored_hash: str, salt: str) -> bool:
+    new_hash = hash_pin_backend(plain_pin, salt)
     
     return hmac.compare_digest(new_hash, stored_hash)

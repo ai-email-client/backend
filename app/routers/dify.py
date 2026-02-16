@@ -1,6 +1,4 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
-from app.services.database import DatabaseService
-from app.utility import get_current_user
 from config import Config
 from app.services.dify import DifyService
 from app.schemas.request import (
@@ -8,24 +6,24 @@ from app.schemas.request import (
     DifySummaryRequest,
     UserRequest
 )
+from dependencies import get_current_user, get_dify_service, get_database_service
 
 router = APIRouter(
     prefix="/dify",
     tags=["dify"]
 )
 
-config = Config()
 background_tasks = BackgroundTasks()
 
 @router.post("/summary")
 async def set_summary(
     req: DifySummaryRequest,
-    current_user: UserRequest = Depends(get_current_user) 
+    current_user: UserRequest = Depends(get_current_user),
+    dify_service: DifyService = Depends(get_dify_service),
+    database_service = Depends(get_database_service)
 ):
-    try:
-        dify_service = DifyService(config)
-        database_service = DatabaseService(config)
-        
+    try:    
+           
         is_summary = database_service.get_summary(req.msg_id, current_user.email_address)
         if  is_summary is not None:
             return is_summary

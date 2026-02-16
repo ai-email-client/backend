@@ -1,16 +1,16 @@
 import datetime
+from config import Config
+from database import SupabaseDB
 from app.api.gmail import GmailAPI
 from app.api.outlook import OutlookAPI
-from config import Config
 from typing import Dict, Any
 from fastapi import HTTPException
 from app.utility import jwt_encode
-from database import SupabaseDB
 
 class AuthService:
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, db: SupabaseDB = None):
         self.config = config
-        self.db = SupabaseDB(config)
+        self.db = db
 
     def get_authorization_url(self, provider: str):
         if provider == "gmail":

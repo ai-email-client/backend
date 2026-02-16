@@ -1,13 +1,12 @@
 from app.schemas.dify import Status
 from app.schemas.request import DifySummaryRequest
 from config import Config
-
 from database import SupabaseDB
 
 class DatabaseService():
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, db: SupabaseDB = None):
         self.config = config
-        self.db = SupabaseDB(config)
+        self.db = db
     
     def get_summary(self, 
                     msg_id: str,

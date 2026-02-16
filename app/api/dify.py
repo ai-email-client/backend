@@ -7,7 +7,6 @@ from app.schemas.request import (
 from app.schemas.response import (
     DifyResponse
 )
-from app.utility import html_to_text
 
 class DifyAPI():
     def __init__(self, config: Config):

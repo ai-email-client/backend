@@ -1,18 +1,15 @@
-from typing import List, Dict, Any
 from config import Config
+from database import SupabaseDB
 from fastapi import HTTPException
 
 from app.api.gmail import GmailAPI
 from app.api.outlook import OutlookAPI
 from app.schemas.request import UserRequest
 
-from database import SupabaseDB
-
-
 class UserService:
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, db: SupabaseDB = None):
         self.config = config
-        self.supabase = SupabaseDB(config)
+        self.db = db
 
     def get_user_profile(self, req: UserRequest):
         if req.provider == "gmail":

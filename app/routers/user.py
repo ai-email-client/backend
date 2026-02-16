@@ -1,23 +1,21 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException
 from app.services.user import UserService
-from typing import Dict, Any
 from config import Config
 from fastapi import Depends
 
-from app.utility import get_current_user
 from app.schemas.request import UserRequest
+
+from dependencies import get_current_user,get_user_service
 
 router = APIRouter(
     prefix="/user",
     tags=["user"]
 )
 
-config = Config()
-user_service = UserService(config)
-
 @router.get("/profile")
 async def profile(
-    req: UserRequest = Depends(get_current_user)
+    req: UserRequest = Depends(get_current_user),
+    user_service: UserService = Depends(get_user_service)
 ):
     try:
         res = user_service.get_user_profile(req)
@@ -28,7 +26,8 @@ async def profile(
 @router.put("/setup-pin")
 async def setup_pin(
     pin: str,
-    req: UserRequest = Depends(get_current_user)
+    req: UserRequest = Depends(get_current_user),
+    user_service: UserService = Depends(get_user_service)
 ):
     try:
         res = user_service.setup_pin(req, pin)

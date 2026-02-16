@@ -1,13 +1,18 @@
 from typing import List, Dict, Any, Optional
 from config import Config
-from supabase import Client
+from supabase import Client,create_client
 
 class SupabaseDB:
-    def __init__(self, config: Config):
-        self.supabase = Client(
-            config.SUPABASE_URL,
-            config.SUPABASE_KEY
-        )
+    def __init__(self, config: Config, client: Optional[Client] = None):
+        self.config = config
+        
+        if client:
+            self.supabase = client
+        else:
+            self.supabase = create_client(
+                config.SUPABASE_URL,
+                config.SUPABASE_KEY
+            )
 
     def select(self, table: str, columns: str = "*", filters: Optional[Dict[str, Any]] = None) -> List[Dict]:
         try:
@@ -63,3 +68,6 @@ class SupabaseDB:
             return response.data
         except Exception as e:
             raise Exception(f"Delete Error ({table}): {str(e)}")
+        
+def get_db_session(config: Config) -> SupabaseDB:
+    return SupabaseDB(config)

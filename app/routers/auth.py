@@ -1,19 +1,18 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
+from dependencies import get_auth_service
 from app.services.auth import AuthService
-from database import SupabaseDB
-from config import Config
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"]
 )
 
-config = Config()
-auth_service = AuthService(config)
-
 @router.get("/login/{provider}")
-async def login(provider: str):
+async def login(
+    provider: str,
+    auth_service: AuthService = Depends(get_auth_service)
+):
     
     res = auth_service.get_authorization_url(provider)
 
@@ -26,7 +25,8 @@ async def login(provider: str):
 async def callback(
     provider: str,
     state: str,
-    code: str
+    code: str,
+    auth_service: AuthService = Depends(get_auth_service)
 ):
     try:
         url = auth_service.handle_oauth_callback(provider, code, state)

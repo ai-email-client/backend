@@ -1,23 +1,18 @@
-import requests
-import json
 from app.api.dify import DifyAPI
 from config import Config
+from database import SupabaseDB
 
 from app.schemas.dify import (
-    DifySummary,
     Status
 )
 from app.schemas.request import (
-    DataInsertSummaryRequest,
-    DifySummaryRequest
+    DataInsertSummaryRequest
 )
-from app.utility import html_to_text
-from database import SupabaseDB
 
 class DifyService():
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, db: SupabaseDB = None):
         self.config = config
-        self.db = SupabaseDB(config)
+        self.db = db
     
     def send_to_dify(self, req: DataInsertSummaryRequest):
         print(f"🚀 START Background Task: {req.msg_id}", flush=True)
