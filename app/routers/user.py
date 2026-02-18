@@ -23,7 +23,7 @@ async def profile(
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 
-@router.put("/setup-pin")
+@router.put("/setup_pin")
 async def setup_pin(
     pin: str,
     req: UserRequest = Depends(get_current_user),

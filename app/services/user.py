@@ -12,20 +12,23 @@ class UserService:
         self.db = db
 
     def get_user_profile(self, req: UserRequest):
-        if req.provider == "gmail":
-            provider_service = GmailAPI(self.config)
-        elif req.provider == "outlook":
-            provider_service = OutlookAPI(self.config)
-        else:
-            raise HTTPException(status_code=400, detail="Invalid provider")
-        creds = provider_service.get_stored_credentials(req.email_address, self.supabase)
-        res = provider_service.get_user_info(creds)
+        try:
+            if req.provider == "gmail":
+                provider_service = GmailAPI(self.config)
+            elif req.provider == "outlook":
+                provider_service = OutlookAPI(self.config)
+            else:
+                raise HTTPException(status_code=400, detail="Invalid provider")
+            creds = provider_service.get_stored_credentials(req.email_address, self.db)
+            res = provider_service.get_user_info(creds)
 
-        return res
+            return res
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
     
     def setup_pin(self, req: UserRequest, pin: str):
         try:
-            res = self.supabase.update(
+            res = self.db.update(
                 table='google_accounts',
                 data={'pin': pin},
                 filters={'email_address': req.email_address}
@@ -36,7 +39,7 @@ class UserService:
 
     def verify_pin(self, req: UserRequest, pin: str):
         try:
-            res = self.supabase.get(
+            res = self.db.get(
                 table='google_accounts',
                 filters={'email_address': req.email_address}
             )

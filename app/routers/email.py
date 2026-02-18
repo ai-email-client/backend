@@ -148,7 +148,7 @@ async def modify_label(
         print(e)
         return HTTPException(status_code=500, detail=str(e))
 
-@router.post("/message/batch-modify")
+@router.post("/message/batch_modify")
 async def batch_modify_label(
     req: MessageBatchModifyLabelRequest,
     current_user: UserRequest = Depends(get_current_user),
@@ -178,7 +178,7 @@ async def delete_message(
         print(e)
         return HTTPException(status_code=500, detail=str(e))
 
-@router.post("/message/batch-delete")
+@router.post("/message/batch_delete")
 async def batch_delete_message(
     req: MessageBatchDeleteRequest,
     current_user: UserRequest = Depends(get_current_user),

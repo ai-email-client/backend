@@ -1,5 +1,7 @@
 from enum import Enum
-from pydantic import BaseModel
+from html import parser
+from dateutil import parser
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
 from app.schemas.email import (
     Sender
@@ -28,4 +30,31 @@ class DifySummary(BaseModel):
     security_confidence: Optional[float] = None
     extraction_status: Optional[str] = None
     confidence: Optional[float] = None
-
+    
+    @field_validator('date', mode='before')
+    @classmethod
+    def supabase_date_format(cls, v):
+        if not v or str(v).lower() in ('null', 'none', '', 'n/a'):
+            return None
+            
+        try:
+            dt = parser.parse(str(v), fuzzy=True, dayfirst=True)
+            
+            return dt.strftime('%Y-%m-%d')
+            
+        except Exception:
+            return None
+        
+    @field_validator('time', mode='before')
+    @classmethod
+    def normalize_time(cls, v):
+        if not v or str(v).lower() == 'null':
+            return None
+            
+        try:
+            dt = parser.parse(str(v), fuzzy=True)
+            
+            return dt.strftime('%H:%M:%S')
+            
+        except Exception:
+            return None

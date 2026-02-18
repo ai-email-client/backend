@@ -14,12 +14,12 @@ class SupabaseDB:
                 config.SUPABASE_KEY
             )
 
-    def select(self, table: str, columns: str = "*", filters: Optional[Dict[str, Any]] = None) -> List[Dict]:
+    def select(self, table: str, columns: str = "*", eq: Optional[Dict[str, Any]] = None) -> List[Dict]:
         try:
             query = self.supabase.table(table).select(columns)
             
-            if filters:
-                for key, value in filters.items():
+            if eq:
+                for key, value in eq.items():
                     query = query.eq(key, value)
             
             response = query.execute()
@@ -35,12 +35,12 @@ class SupabaseDB:
         except Exception as e:
             raise Exception(f"Insert Error ({table}): {str(e)}")
 
-    def update(self, table: str, data: Dict[str, Any], filters: Dict[str, Any]) -> List[Dict]:
+    def update(self, table: str, data: Dict[str, Any], eq: Dict[str, Any]) -> List[Dict]:
 
         try:
             query = self.supabase.table(table).update(data)
             
-            for key, value in filters.items():
+            for key, value in eq.items():
                 query = query.eq(key, value)
                 
             response = query.execute()
@@ -48,10 +48,10 @@ class SupabaseDB:
         except Exception as e:
             raise Exception(f"Update Error ({table}): {str(e)}")
 
-    def upsert(self, table: str, data: Dict[str, Any], conflict_target: Optional[str] = None) -> List[Dict]:
+    def upsert(self, table: str, data: Dict[str, Any], on_conflict: Optional[str] = None) -> List[Dict]:
 
         try:
-            opts = {'on_conflict': conflict_target} if conflict_target else {}
+            opts = {'on_conflict': on_conflict} if on_conflict else {}
             
             response = self.supabase.table(table).upsert(data, **opts).execute()
             return response.data

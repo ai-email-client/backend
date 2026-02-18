@@ -25,7 +25,7 @@ class DatabaseService():
         res = self.db.select(
             table='email_ai_analysis',
             columns = columns_str,
-            filters={
+            eq={
                 'source_email_id': source_email_id
                 }
             )
@@ -41,7 +41,7 @@ class DatabaseService():
         res = self.db.select(
             table='source_emails',
             columns=columns_str,
-            filters={
+            eq={
                 'msg_id': msg_id,
                 'user_email_address': email_address
                 }
@@ -54,7 +54,7 @@ class DatabaseService():
         res = self.db.select(
             table='google_accounts',
             columns='pin',
-            filters={
+            eq={
                 'email_address': email_address
                 }
             )
@@ -73,4 +73,26 @@ class DatabaseService():
                 
             }
         )
+        return res
+    
+    def upsert_email_tags(self, msg_id: str, email_tags: str):
+        res = self.db.upsert(
+            table='source_emails',
+            data={
+                'msg_id': msg_id,
+                'email_tags': email_tags
+            },
+             on_conflict='msg_id'
+         )
+        return res
+    
+    def upsert_status(self, source_email_id: str, status: str):
+        res = self.db.upsert(
+            table='source_emails',
+            data={
+                'id': source_email_id,
+                'status': status
+            },
+             on_conflict='id'
+         )
         return res

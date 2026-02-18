@@ -11,7 +11,7 @@ router = APIRouter(
     tags=["database"]
 )
 
-@router.get("/get-summary/{msg_id}")
+@router.get("/get_summary/{msg_id}")
 async def get_summary(
     msg_id: str,
     current_user: UserRequest = Depends(get_current_user),
@@ -22,6 +22,22 @@ async def get_summary(
         if source_email is None:
             raise HTTPException(status_code=404, detail="Source email not found for the given msg_id and user")
         res = service.get_summary(source_email.id)
+
+        return res
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/get_source_email/{msg_id}")
+async def get_source_email(
+    msg_id: str,
+    current_user: UserRequest = Depends(get_current_user),
+    service: DatabaseService = Depends(get_db)
+):
+    try:
+        res = service.get_source_email(msg_id, current_user.email_address)
+        if res is None:
+            raise HTTPException(status_code=404, detail="Source email not found for the given msg_id and user")
 
         return res
     except Exception as e:
@@ -43,3 +59,22 @@ async def get_user_pin(
         print(e)
         return HTTPException(status_code=500, detail=str(e)
 )
+        
+@router.post("/upsert_email_tags/{msg_id}")
+async def upsert_email_tags(
+    msg_id: str,
+    email_tags: str,
+    current_user: UserRequest = Depends(get_current_user),
+    service: DatabaseService = Depends(get_db)
+):
+    try:
+        source_email = service.get_source_email(msg_id, current_user.email_address)
+        if source_email is None:
+            raise HTTPException(status_code=404, detail="Source email not found for the given msg_id and user")
+        
+        res = service.upsert_email_tags(source_email.id, email_tags)
+
+        return res
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))
