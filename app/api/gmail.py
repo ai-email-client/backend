@@ -35,8 +35,6 @@ from app.schemas.category import (
 
 from exception import (
     CodeExchangeException,
-    NoRefreshTokenException,
-    NoUserIdException,
     FlowExchangeError
 )
 
@@ -67,19 +65,19 @@ class GmailAPI:
     ):
         try:
             creds = Credentials(
-                token=creds['access_token'],
-                refresh_token=creds['refresh_token'],
+                token=creds.get('access_token'),
+                refresh_token=creds.get('refresh_token'),
                 token_uri=self.config.GOOGLE_TOKEN_URI,
                 client_id=self.config.GOOGLE_CLIENT_ID,
                 client_secret=self.config.GOOGLE_CLIENT_SECRET,
-                scopes=creds['scope'],
+                scopes=creds.get('scopes'),
             )
             return build('gmail', 'v1', credentials=creds)
         except Exception as e:
-            return None
+            raise e
     
     def verify_oauth2_token(self, 
-        creds
+        creds: dict[str, str]
     ):
         return id_token.verify_oauth2_token(
             creds['id_token'], 
@@ -110,11 +108,11 @@ class GmailAPI:
             return credentials
         except FlowExchangeError as error:
             logging.error('An error occurred: %s', error)
-            raise CodeExchangeException(None)
+            raise CodeExchangeException(authorization_code)
     
     def get_user_info(self, 
-        credentials
-    ):
+        credentials: dict[str, str]
+    )-> dict[str, str]:
         """Send a request to the UserInfo API to retrieve the user's information.
 
         Args:
@@ -126,14 +124,14 @@ class GmailAPI:
         """
         user_info_service = self.build_service(credentials)
 
-        user_info = None
+        user_info = {}
         try:
             user_info = user_info_service.users().getProfile(userId='me').execute()
         except google_api_errors.HttpError as e:
             logging.error('An error occurred: %s', e)
         return user_info
     
-    def get_authorization_url(self) -> str:
+    def get_authorization_url(self):
         """Retrieve the authorization URL.
         Returns:
             Authorization URL to redirect the user to.
@@ -146,7 +144,7 @@ class GmailAPI:
         authorization_code: str,
         state: str,
         db: SupabaseDB
-    ) -> Credentials:
+    ):
         """Retrieve credentials using the provided authorization code.
 
         This function exchanges the authorization code for an access token and queries
@@ -167,11 +165,11 @@ class GmailAPI:
             credentials = self.exchange_code(authorization_code)
             user_info = self.verify_oauth2_token(credentials)
             if credentials.get('refresh_token') is not None:
-                return self.store_credentials(user_info.get('email'), credentials, db)
+                return self.store_credentials(user_info.get('email',""), credentials, db)
             else:
-                return self.get_stored_credentials(user_info.get('email'), db)
+                return self.get_stored_credentials(user_info.get('email',""), db)
         except Exception as e:
-            print(f"Error: {e}")
+            raise e
 
     def get_stored_credentials(
         self, 
@@ -186,6 +184,8 @@ class GmailAPI:
         Returns:
             Stored oauth2client.client.OAuth2Credentials if found, None otherwise.
         """
+        if email_address == "":
+            raise Exception("Email address is required")
         try:
             res = db.select(
                 "google_accounts",
@@ -214,6 +214,8 @@ class GmailAPI:
             user_id: User's ID.
             credentials: OAuth 2.0 credentials to store.
         """
+        if email_address == "":
+            raise Exception("Email address is required")
         try:
             res = db.upsert(
                 "google_accounts",
@@ -286,10 +288,10 @@ class GmailAPI:
                         tag=results['labelIds'],
                         attachments=utility.get_attachments(payload)
                     ))
-            return {
-                'messages': messages,
-                'page_token': page_token
-            }
+            return EmailFetchResponse(
+                messages=messages,
+                page_token=page_token
+            )
 
         except Exception as e:
             raise Exception(f"Error function fetch_emails: {str(e)}")
@@ -315,7 +317,7 @@ class GmailAPI:
             if html_part is not None:
                 html = utility.get_decode_by_mimetype(html_part, 'text/html')
             else:
-                html = None
+                html = ""
 
             plain_text_part = utility.get_part_by_mimetype(payload, 'text/plain')
             if plain_text_part is not None:
@@ -417,7 +419,7 @@ class GmailAPI:
                 "messagesUnread": req.body.messagesUnread,
                 "threadsTotal": req.body.threadsTotal,
                 "threadsUnread": req.body.threadsUnread,
-                "color": req.body.color.model_dump(),
+                "color": req.body.color.model_dump() if req.body.color else None,
             }
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)

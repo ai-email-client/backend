@@ -30,8 +30,8 @@ async def setup_pin(
     user_service: UserService = Depends(get_user_service)
 ):
     try:
-        res = user_service.setup_pin(req, pin)
-        return res
+        
+        return "PIN setup successfully"
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 

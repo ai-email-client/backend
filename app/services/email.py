@@ -14,7 +14,7 @@ from app.schemas.request import (
 )
 
 class EmailService:
-    def __init__(self, config: Config, db: SupabaseDB = None):
+    def __init__(self, config: Config, db: SupabaseDB):
         self.config = config
         self.db = db
 
@@ -64,22 +64,10 @@ class EmailService:
 
         return res
     
-    def get_user_profile(self, current_user: UserRequest):
-        if current_user.provider == "gmail":
-            provider_service = GmailAPI(self.config)
-        elif current_user.provider == "outlook":
-            provider_service = OutlookAPI(self.config)
-        else:
-            raise HTTPException(status_code=400, detail="Invalid provider")
-        
-        res = provider_service.get_user_profile(current_user, self.db)
-
-        return res
-    
     def get_attachments(self, req: AttachmentRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
-        elif req.provider == "outlook":
+        elif current_user.provider == "outlook":
             provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
@@ -196,7 +184,7 @@ class EmailService:
 
         return res
     
-    def update_message_labels(self, msg_id: str, email_category: str, current_user: UserRequest):
+    def update_message_labels(self, msg_id: str, label_id: str, current_user: UserRequest):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
@@ -204,15 +192,12 @@ class EmailService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
-        labels =provider_service.get_labels(current_user, self.db)
-        update_labels = [label.id for label in labels.categories if label.name == email_category]
-        print(update_labels)
         req = MessageModifyLabelRequest(
             id=msg_id,
-            addLabelIds=update_labels, 
+            addLabelIds=[label_id], 
             removeLabelIds=[]
             )
-        provider_service.message_modify_label(req, current_user, self.db) 
+        provider_service.message_modify_label(req, current_user, self.db)
 
         return
     

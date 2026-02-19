@@ -6,10 +6,10 @@ class GetCredentialsException(Exception):
     authorization_url: Authorization URL to redirect the user to in order to
                       request offline access.
   """
-  def __init__(self, authorization_url):
+  def __init__(self, authorization_url: str):
     """Construct a GetCredentialsException."""
     super().__init__(f"Authorization URL: {authorization_url}")
-    self.authorization_url = authorization_url
+    self.authorization_url: str = authorization_url
 
 class CodeExchangeException(GetCredentialsException):
     """Error raised when a code exchange has failed."""

@@ -1,17 +1,18 @@
 from enum import Enum
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 from app.schemas.color import Color
 
-class Category(Enum):
-    APPOINTMENT = "Appointment"
-    MEETING = "Meeting"
-    INVITATION = "Invitation"
-    INVOICE = "Invoice"
-    MARKETING = "Marketing"
-    NOTIFICATION = "Notification"
-    ANNOUNCEMENT = "Announcement"
+# class EnumCategory(Enum):
+#     APPOINTMENT = "Appointment"
+#     PROMOTIOL = "Promotiol"
+#     MEETING = "Meeting"
+#     INVITATION = "Invitation"
+#     INVOICE = "Invoice"
+#     MARKETING = "Marketing"
+#     NOTIFICATION = "Notification"
+#     ANNOUNCEMENT = "Announcement"
 
 class MessageListVisibility(str, Enum):
     HIDE = "hide"
@@ -40,8 +41,8 @@ class Category(BaseModel):
     messagesUnread: int | None = None
     threadsTotal: int | None = None
     threadsUnread: int | None = None
-    color: CategoryColor | None = None
-
+    color: Optional[CategoryColor] = None
+    
 INITIAL_LABELS = {
     "appointment": {
         "name": "appointment",
@@ -55,6 +56,16 @@ INITIAL_LABELS = {
     },
     "meeting": {
         "name": "meeting",
+        "messageListVisibility": MessageListVisibility.SHOW,
+        "labelListVisibility": LabelListVisibility.SHOW,
+        "type": "user",
+        "color": {
+            "textColor": Color.WHITE,
+            "backgroundColor": Color.BLACK
+        }
+    },
+    "promotional": {
+        "name": "promotional",
         "messageListVisibility": MessageListVisibility.SHOW,
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",

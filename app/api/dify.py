@@ -3,6 +3,7 @@ import urllib3
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from app.utility import clean_text
 from config import Config
 from app.schemas.response import DifyResponse 
 
@@ -13,9 +14,13 @@ class DifyAPI():
         self.config = config
     
     def get_summary(self, plain_text: str):
+        url = self.config.DIFY_URL
+        if not url:
+            raise Exception("Dify URL is not configured")
+            
         payload = {
             "inputs": {
-                "email_text": plain_text,
+                "email_text": clean_text(plain_text)[:4000],
             },
             "response_mode": "blocking",
             "user": "frontend-test"
@@ -24,8 +29,7 @@ class DifyAPI():
         headers = {
             "Authorization": f"Bearer {self.config.DIFY_API_KEY}",
             "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "ngrok-skip-browser-warning": "true"
         }
         
         try:
@@ -42,7 +46,7 @@ class DifyAPI():
             session.mount("https://", adapter)
             
             response = session.post(
-                url=self.config.DIFY_URL,
+                url=url,
                 headers=headers,
                 json=payload,
                 verify=False,      

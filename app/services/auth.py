@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from app.utility import jwt_encode
 
 class AuthService:
-    def __init__(self, config: Config, db: SupabaseDB = None):
+    def __init__(self, config: Config, db: SupabaseDB):
         self.config = config
         self.db = db
 

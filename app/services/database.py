@@ -10,9 +10,9 @@ from config import Config
 from database import SupabaseDB
 
 class DatabaseService():
-    def __init__(self, config: Config, db: SupabaseDB = None):
-        self.config = config
-        self.db = db
+    def __init__(self, config: Config, db: SupabaseDB):
+        self.config: Config = config
+        self.db: SupabaseDB = db
     
     def get_summary(self, 
                     source_email_id: str,
@@ -64,8 +64,8 @@ class DatabaseService():
                 'email_address': email_address
                 }
             )
-        if res and 'data' in res and len(res['data']) > 0:
-            return res['data'][0].get('pin')
+        if res and len(res) > 0:
+            return res[0].get('pin')
         return None
     
     def insert_source_email(self, req: DifySummaryRequest, user_email: str):
@@ -79,7 +79,9 @@ class DatabaseService():
                 
             }
         )
-        return res
+        if res and len(res) > 0:
+            return SourceEmailResponse(**res[0])
+        return None
     
     def upsert_email_source(self, req: DifySummaryRequest, user_email: str):
         res = self.db.upsert(
@@ -94,7 +96,9 @@ class DatabaseService():
             },
              on_conflict='msg_id'
          )
-        return res
+        if res and len(res) > 0:
+            return SourceEmailResponse(**res[0])
+        return None
     
     def upsert_email_tags(self, msg_id: str, email_tags: str):
         res = self.db.upsert(
@@ -105,7 +109,9 @@ class DatabaseService():
             },
              on_conflict='msg_id'
          )
-        return res
+        if res and len(res) > 0:
+            return SourceEmailResponse(**res[0])
+        return None
     
     def upsert_status(self, source_email_id: str, status: str):
         res = self.db.upsert(
@@ -116,4 +122,6 @@ class DatabaseService():
             },
              on_conflict='id'
          )
-        return res
+        if res and len(res) > 0:
+            return SourceEmailResponse(**res[0])
+        return None

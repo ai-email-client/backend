@@ -95,4 +95,4 @@ class EmailFetchPlainResponse(BaseModel):
 
 
 class CategoryListResponse(BaseModel):
-    categories: List[Category]
+    categories: List[Category] 

@@ -7,7 +7,7 @@ from app.api.outlook import OutlookAPI
 from app.schemas.request import UserRequest
 
 class UserService:
-    def __init__(self, config: Config, db: SupabaseDB = None):
+    def __init__(self, config: Config, db: SupabaseDB):
         self.config = config
         self.db = db
 
@@ -20,37 +20,12 @@ class UserService:
             else:
                 raise HTTPException(status_code=400, detail="Invalid provider")
             creds = provider_service.get_stored_credentials(req.email_address, self.db)
+            if creds is None:
+                raise HTTPException(status_code=404, detail="Credentials not found for user")
             res = provider_service.get_user_info(creds)
-
+            if res is None:
+                raise HTTPException(status_code=404, detail="User not found")
             return res
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
-    
-    def setup_pin(self, req: UserRequest, pin: str):
-        try:
-            res = self.db.update(
-                table='google_accounts',
-                data={'pin': pin},
-                filters={'email_address': req.email_address}
-            )
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        return res
-
-    def verify_pin(self, req: UserRequest, pin: str):
-        try:
-            res = self.db.get(
-                table='google_accounts',
-                filters={'email_address': req.email_address}
-            )
-            if not res or 'data' not in res or len(res['data']) == 0:
-                raise HTTPException(status_code=404, detail="User not found")
-            stored_pin = res['data'][0].get('pin')
-            if stored_pin is None:
-                raise HTTPException(status_code=400, detail="PIN not set for user")
-            return stored_pin == pin
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
-
-        
 

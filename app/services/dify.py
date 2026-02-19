@@ -15,26 +15,16 @@ from app.schemas.request import (
 )
 
 class DifyService():
-    def __init__(self, config: Config, db: SupabaseDB = None):
+    def __init__(self, config: Config, db: SupabaseDB):
         self.config = config
         self.db = db
     
     def send_to_dify(self, req: DataInsertSummaryRequest):
-        self.db.upsert(
-            table='source_emails',
-            data={
-                'id': req.id,
-                'email_tags': req.email_tags,
-                'status': Status.processing.value
-                },
-                on_conflict='id'
-            )
         try:
             print(f"Starting Dify API request for id {req.id} in the background.", flush=True)
             dify_api = DifyAPI(self.config)
-            res = dify_api.get_summary(req.plain_text[:4000])
+            res = dify_api.get_summary(req.plain_text)
             if res is None:
-                print(f"Dify API Error for msg_id {req.id}", flush=True)
                 self.db.upsert(
                     table='source_emails',
                     data={
@@ -44,8 +34,17 @@ class DifyService():
                     },
                     on_conflict='id'
                 )
-                return
+                raise Exception(f"Dify API Response is None for id {req.id}")
+            
+            if res.data is None:
+                raise Exception(f"Dify API Response Error:{req.id}")
+            if res.data.outputs is None:
+                raise Exception(f"Dify API Response Output is None for id {req.id}")
+            if res.data.outputs.clean_email is None:
+                raise Exception(f"Dify API Response Summary is None for id {req.id}")
+            
             print(f"Dify API Response time for id {req.id}: {res.data.elapsed_time}", flush=True)
+            
             dify_res = res.data.outputs.clean_email
             if dify_res is not None:
                 self.db.upsert(
@@ -67,18 +66,25 @@ class DifyService():
                 )
                 print(f"Inserted AI analysis for id {req.id} successfully", flush=True)
                 
-                if req.provider == "gmail":
+                if req.current_user.provider == "gmail":
                     provider_service = GmailAPI(self.config)
-                elif req.provider == "outlook":
+                elif req.current_user.provider == "outlook":
                     provider_service = OutlookAPI(self.config)
                 else:
-                    raise HTTPException(status_code=400, detail="Invalid provider")
-                labels =provider_service.get_labels(req.current_user,self.db)
-                req = MessageModifyLabelRequest(
+                    raise Exception(f"Invalid provider for id {req.id}")
+                
+                labels = provider_service.get_labels(req.current_user, self.db)
+                if labels is None:
+                    raise Exception(f"Labels not found for id {req.id}")
+                target_label_id = next((label.id for label in labels.categories if label.name == dify_res.email_category), None)
+                if target_label_id is None:
+                    raise Exception(f"Update labels not found for id {req.id}")
+                req_mod = MessageModifyLabelRequest(
                     id=req.msg_id,
-                    addLabelIds=[label['id'] for label in labels if label['name'] == dify_res.email_category]
-                )
-                provider_service.message_modify_label(req, req.current_user, self.db)                    
+                    addLabelIds=[target_label_id], 
+                    removeLabelIds=[]
+                    )
+                provider_service.message_modify_label(req_mod, req.current_user, self.db)                    
                 
                 return
         except Exception as e:

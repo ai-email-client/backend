@@ -19,7 +19,7 @@ def decode_base64(data: str) -> str:
     except Exception:
         return ""
 
-def clean_html(html_content: str) -> str:
+def clean_html(html_content: str)-> str:
     if not html_content:
         return ""
     try:
@@ -36,7 +36,7 @@ def clean_html(html_content: str) -> str:
     
     except Exception:
         return html_content
-def clean_text(text: str) -> str:
+def clean_text(text: str)-> str:
     if not text:
         return ""
 
@@ -86,31 +86,30 @@ def get_part_by_mimetype(payload: Dict[str, Any], target_mimetype: str) -> Optio
     
     return None
 
-def get_attachments(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def get_attachments(payload: Dict[str, Any]):
     attachments = []
+    
     parts = payload.get('parts', [])
     
     for part in parts:
-        # 1. เก็บไฟล์แนบ
-        if part.get('filename'):
+        if part.get('filename',""):
             attachments.append({
-                "filename": part.get('filename'),
-                "mimeType": part.get('mimeType'),
+                "filename": part.get('filename',""),
+                "mimeType": part.get('mimeType',""),
                 "size": part.get('body', {}).get('size', 0),
-                "attachmentId": part.get('body', {}).get('attachmentId')
+                "attachmentId": part.get('body', {}).get('attachmentId',"")
             })
         
-        # 2. Recursive: แก้ตรงนี้! 
-        # ส่ง 'part' (Dict) เข้าไป ไม่ใช่ 'part["parts"]' (List)
+
         if 'parts' in part:
             attachments.extend(get_attachments(part))
     return attachments
 
-def get_decode_by_mimetype(parts: Dict[str, Any], target_mimetype: str) -> Optional[str]:
+def get_decode_by_mimetype(parts: Dict[str, Any], target_mimetype: str):
     if parts['mimeType'] == target_mimetype:
         if 'body' in parts and parts['body'].get('data'):
             return decode_base64(parts['body']['data'])
-    return None
+    return ""
 
 def html_to_text(html_content: str) -> str:
     if not html_content:
