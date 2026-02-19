@@ -1,7 +1,7 @@
 from typing import List,Optional
 from pydantic import BaseModel
 from app.schemas.dify import DifySummary
-from app.schemas.email import Attachment
+from app.schemas.email import Attachment, Sender
 from app.schemas.category import Category
 
 class SourceEmailResponse(BaseModel):
@@ -11,6 +11,25 @@ class SourceEmailResponse(BaseModel):
     email_tags: List[str]
     status: str
     user_email_address: str
+
+class EmailAIAnalysisResponse(BaseModel):
+    source_email_id: str
+    sender: Optional[Sender] = None
+    email_category: Optional[str] = None
+    date: Optional[str] = None
+    time: Optional[str] = None
+    location: Optional[str] = None
+    instructions: Optional[List[str]] = None
+    required_items: Optional[List[str]] = None
+    summary: Optional[str] = None
+    is_spam: Optional[bool] = None
+    is_threat: Optional[bool] = None
+    spam_type: Optional[str] = None
+    spam_confidence: Optional[float] = None
+    security_type: Optional[str] = None
+    security_confidence: Optional[float] = None
+    extraction_status: Optional[str] = None
+    confidence: Optional[float] = None
 
 class CredentialResponse(BaseModel):
     access_token: str

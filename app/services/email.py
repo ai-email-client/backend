@@ -195,7 +195,27 @@ class EmailService:
         res = provider_service.message_untrash(req, current_user, self.db)
 
         return res
+    
+    def update_message_labels(self, msg_id: str, email_category: str, current_user: UserRequest):
+        if current_user.provider == "gmail":
+            provider_service = GmailAPI(self.config)
+        elif current_user.provider == "outlook":
+            provider_service = OutlookAPI(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        labels =provider_service.get_labels(current_user, self.db)
+        update_labels = [label.id for label in labels.categories if label.name == email_category]
+        print(update_labels)
+        req = MessageModifyLabelRequest(
+            id=msg_id,
+            addLabelIds=update_labels, 
+            removeLabelIds=[]
+            )
+        provider_service.message_modify_label(req, current_user, self.db) 
 
+        return
+    
     def draft_create(
         self,
         req: DraftCreateRequest,

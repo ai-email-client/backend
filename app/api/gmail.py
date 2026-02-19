@@ -368,8 +368,6 @@ class GmailAPI:
                         backgroundColor="#FFFFFF"
                     )),
                 ))
-            # return labels
-
             return CategoryListResponse(categories=category_list)
         except Exception as e:
             raise Exception(f"Error function get_labels: {str(e)}")

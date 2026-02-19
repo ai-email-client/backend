@@ -36,19 +36,23 @@ def clean_html(html_content: str) -> str:
     
     except Exception:
         return html_content
-
 def clean_text(text: str) -> str:
     if not text:
         return ""
 
     text = unicodedata.normalize('NFKC', text)
 
-    text = re.sub(r'\[https?://[^\]]+\]', '', text)
+    # 3. ลบลิงก์ URL เพื่อประหยัด Token ของ AI
+    text = re.sub(r'\[https?://[^\]]+\]', '', text) 
+    text = re.sub(r'<https?://[^>]+>', '', text) 
     text = re.sub(r'https?://\S+', '', text)
 
-    text = re.sub(r'[\u200b\u200c\u200d\u2060\ufeff\u00ad\u034f\u2007]', '', text)
-
+    invisible_chars = r'[\u200b\u200c\u200d\u2060\ufeff\u00ad\u034f\u2007\u200e\u200f\u202a-\u202e]'
+    text = re.sub(invisible_chars, '', text)
     text = text.replace('\ufffd', '')
+
+    text = re.sub(r'[-_=*+~#]{4,}', '---', text)
+
     text = re.sub(r'[\t\xa0]', ' ', text)
     text = text.replace('\r', '')
     text = re.sub(r' +', ' ', text)

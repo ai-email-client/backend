@@ -1,6 +1,11 @@
 from app.schemas.dify import Status
-from app.schemas.request import DifySummaryRequest
-from app.schemas.response import SourceEmailResponse
+from app.schemas.request import (
+    DifySummaryRequest
+)
+from app.schemas.response import (
+    SourceEmailResponse, 
+    EmailAIAnalysisResponse
+)
 from config import Config
 from database import SupabaseDB
 
@@ -29,8 +34,9 @@ class DatabaseService():
                 'source_email_id': source_email_id
                 }
             )
-        return res
-    
+        if res and len(res) > 0:
+            return EmailAIAnalysisResponse(**res[0])
+        return None
     def get_source_email(self,                     
                         msg_id: str,
                         email_address: str
@@ -73,6 +79,21 @@ class DatabaseService():
                 
             }
         )
+        return res
+    
+    def upsert_email_source(self, req: DifySummaryRequest, user_email: str):
+        res = self.db.upsert(
+            table='source_emails',
+            data={
+                'msg_id': req.msg_id,
+                'plain_text': req.plain_text,
+                'email_tags': req.email_tags,
+                'status': Status.new.value,
+                'user_email_address': user_email,
+                'created_at': 'now()'
+            },
+             on_conflict='msg_id'
+         )
         return res
     
     def upsert_email_tags(self, msg_id: str, email_tags: str):

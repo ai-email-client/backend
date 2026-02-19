@@ -17,7 +17,7 @@ class DataInsertSummaryRequest(BaseModel):
     msg_id: str
     plain_text: str
     email_tags: List[str]
-    user_email_address: str
+    current_user: UserRequest
 
 class AttachmentRequest(BaseModel):
     msg_id: str

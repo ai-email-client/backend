@@ -1,5 +1,8 @@
+from http.client import HTTPException
 from time import time
 from app.api.dify import DifyAPI
+from app.api.gmail import GmailAPI
+from app.api.outlook import OutlookAPI
 from config import Config
 from database import SupabaseDB
 
@@ -7,7 +10,8 @@ from app.schemas.dify import (
     Status
 )
 from app.schemas.request import (
-    DataInsertSummaryRequest
+    DataInsertSummaryRequest,
+    MessageModifyLabelRequest
 )
 
 class DifyService():
@@ -62,5 +66,20 @@ class DifyService():
                     on_conflict='source_email_id' 
                 )
                 print(f"Inserted AI analysis for id {req.id} successfully", flush=True)
+                
+                if req.provider == "gmail":
+                    provider_service = GmailAPI(self.config)
+                elif req.provider == "outlook":
+                    provider_service = OutlookAPI(self.config)
+                else:
+                    raise HTTPException(status_code=400, detail="Invalid provider")
+                labels =provider_service.get_labels(req.current_user,self.db)
+                req = MessageModifyLabelRequest(
+                    id=req.msg_id,
+                    addLabelIds=[label['id'] for label in labels if label['name'] == dify_res.email_category]
+                )
+                provider_service.message_modify_label(req, req.current_user, self.db)                    
+                
+                return
         except Exception as e:
             print(f"Exception for id {req.id}: {str(e)}", flush=True)
