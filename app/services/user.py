@@ -1,3 +1,4 @@
+from app.utility import hash_pin, verify_pin
 from config import Config
 from database import SupabaseDB
 from fastapi import HTTPException
@@ -29,3 +30,35 @@ class UserService:
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
+    def setup_pin(self, req: UserRequest, pin: str, db: SupabaseDB):
+        if self.config.SECRET_KEY is None:
+            raise HTTPException(status_code=400, detail="Secret key not found")
+        
+        pin = hash_pin(pin, self.config.SECRET_KEY)
+        try:
+            db.upsert(
+                table='users',
+                data={
+                    'pin': pin, 
+                    'email_address': req.email_address
+                },
+                on_conflict='email_address'
+            )
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+    def verify_pin(self, req: UserRequest, pin: str, db: SupabaseDB):
+        if self.config.SECRET_KEY is None:
+            raise HTTPException(status_code=400, detail="Secret key not found")
+        res = db.select(
+            table='users',
+            columns='pin',
+            eq={'email_address': req.email_address}
+        )
+        if res is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        if res[0]['pin']!= pin:
+            raise HTTPException(status_code=401, detail="Invalid PIN")
+        
+        return  verify_pin(pin, res[0]['pin'], self.config.SECRET_KEY)
+        

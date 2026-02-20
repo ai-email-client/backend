@@ -1,4 +1,5 @@
 from app.schemas.dify import Status
+from app.schemas.email import Sender
 from app.schemas.request import (
     DifySummaryRequest
 )
@@ -54,6 +55,19 @@ class DatabaseService():
             )
         if res and len(res) > 0:
             return SourceEmailResponse(**res[0])
+        return None
+
+    def upsert_sender(self, source_email_id: str, sender: Sender):
+        res = self.db.upsert(
+            table='email_ai_analysis',
+            data={
+                'source_email_id': source_email_id,
+                'sender': sender.model_dump()
+            },
+            on_conflict='source_email_id'
+         )
+        if res and len(res) > 0:
+            return EmailAIAnalysisResponse(**res[0])
         return None
     
     def get_user_pin(self, email_address: str):

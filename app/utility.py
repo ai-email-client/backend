@@ -140,13 +140,13 @@ def jwt_decode(token: str, secret_key: str):
     except Exception as e:
         return HTTPException(status_code=400, detail=str(e))
 
-def hash_pin_backend(pin: str, salt: str) -> str:
+def hash_pin(pin: str, salt: str) -> str:
     salted_pin = pin + salt
     
     hashed = hashlib.sha256(salted_pin.encode('utf-8')).hexdigest()
     return hashed
 
 def verify_pin(plain_pin: str, stored_hash: str, salt: str) -> bool:
-    new_hash = hash_pin_backend(plain_pin, salt)
+    new_hash = hash_pin(plain_pin, salt)
     
     return hmac.compare_digest(new_hash, stored_hash)

@@ -392,17 +392,34 @@ class GmailAPI:
             raise Exception(f"Error function get_attachments: {str(e)}")
     
     def get_label_by_id(self, 
-        req: GetLabelRequest,
+        label_id: str,
         current_user: UserRequest,
         db: SupabaseDB
     ):
         try:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
-            results = service.users().labels().get(userId='me', id=req.id).execute()
+            results = service.users().labels().get(userId='me', id=label_id).execute()
             return results
         except Exception as e:
             raise Exception(f"Error function get_label_by_id: {str(e)}")
+        
+    def get_label_by_name(self, 
+        label_name: str,
+        current_user: UserRequest,
+        db: SupabaseDB
+    ):
+        try:
+            credentials = self.get_stored_credentials(current_user.email_address, db)
+            service = self.build_service(credentials)
+            results = service.users().labels().list(userId='me').execute()
+            labels = results.get('labels', [])
+            for label in labels:
+                if label.get('name').lower() == label_name.lower():
+                    return Category(**label)
+            return None
+        except Exception as e:
+            raise Exception(f"Error function get_label_by_name: {str(e)}")
     
     def create_label(self, 
         req: CreateLabelRequest,

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
 from app.schemas.dify import Status
+from app.schemas.email import Sender
 from app.services.dify import DifyService
 from app.services.database import DatabaseService
 from app.schemas.request import (
@@ -30,7 +31,6 @@ async def set_summary(
     email_service: EmailService = Depends(get_email_service),
     background_tasks: BackgroundTasks = BackgroundTasks()
 ):
-
     try:    
         source_email = database_service.get_source_email(
             req.msg_id, 
@@ -44,24 +44,33 @@ async def set_summary(
             temp = source_email.model_dump()
             dify_req = DataInsertSummaryRequest(
                 **temp, 
-                current_user=current_user
+                current_user=current_user, 
+                sender=req.sender
                 )
             
             if summary_record:
                 if status == Status.done.value:
                     print(f"Summary for msg_id {source_email.id} already exists. Returning existing summary.", flush=True)
-                    labels = email_service.get_labels(current_user)
-                    if labels is None:
-                        raise HTTPException(status_code=400, detail="Labels not found")
                     
-                    target_label_id = next((label.id for label in labels.categories if label.name == summary_record.email_category), None)
-                    if target_label_id not in req.email_tags and target_label_id is not None:
-                        print(f"Summary for msg_id {source_email.id} is done. Updating labels.", flush=True)
+                    if summary_record.email_category:
+                        label = email_service.get_label_by_name(summary_record.email_category, current_user)
+                        if label.id not in req.email_tags and label.id:
+                            print(f"Summary for msg_id {source_email.id} is done. Updating labels.", flush=True)
+                            background_tasks.add_task(
+                                email_service.update_message_labels, 
+                                msg_id=source_email.msg_id, 
+                                label_id=label.id, 
+                                current_user=current_user
+                            )
+                    if summary_record.sender is not None:
+                        sender = Sender(
+                            name=req.sender,
+                            type=summary_record.sender.type
+                        )
                         background_tasks.add_task(
-                            email_service.update_message_labels, 
-                            msg_id=source_email.msg_id, 
-                            label_id=target_label_id, 
-                            current_user=current_user
+                            database_service.upsert_sender, 
+                            source_email_id=source_email.id,
+                            sender=sender
                         )             
                     return summary_record
                 elif status == Status.processing.value:
@@ -80,7 +89,7 @@ async def set_summary(
             if inserted is None:
                 raise HTTPException(status_code=400, detail="Failed to insert email source") 
             print(f"No existing summary request for msg_id {inserted.id}. Creating new request.", flush=True)
-            dify_req = DataInsertSummaryRequest(**inserted.model_dump(), current_user=current_user)
+            dify_req = DataInsertSummaryRequest(**inserted.model_dump(), sender=req.sender, current_user=current_user)
             database_service.upsert_status(source_email_id=inserted.id, status=Status.processing.value)            
             background_tasks.add_task(dify_service.send_to_dify, dify_req)
         
@@ -89,3 +98,18 @@ async def set_summary(
         print(e)
         return HTTPException(status_code=500, detail=str(e))
 
+@router.get("/overview")
+async def get_overview(
+    current_user: UserRequest = Depends(get_current_user),
+    database_service: DatabaseService = Depends(get_database_service)
+):
+    try:
+        res = None
+
+        
+        
+        
+        return res
+    except Exception as e:
+        print(e)
+        return HTTPException(status_code=500, detail=str(e))

@@ -63,7 +63,7 @@ class EmailService:
         res = provider_service.get_labels(current_user, self.db)
 
         return res
-    
+
     def get_attachments(self, req: AttachmentRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
@@ -100,7 +100,7 @@ class EmailService:
 
         return res
     
-    def get_label_by_id(self, req: GetLabelRequest, current_user: UserRequest):
+    def get_label_by_id(self, label_id: str, current_user: UserRequest):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
@@ -108,8 +108,25 @@ class EmailService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
-        res = provider_service.get_label_by_id(req, current_user, self.db)
+        res = provider_service.get_label_by_id(label_id, current_user, self.db)
 
+        return res
+    
+    def get_label_by_name(self, label_name: str, current_user: UserRequest):
+        if current_user.provider == "gmail":
+            provider_service = GmailAPI(self.config)
+        elif current_user.provider == "outlook":
+            provider_service = OutlookAPI(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        res = provider_service.get_label_by_name(label_name, current_user, self.db)
+        
+        if res is None:
+            res = provider_service.get_label_by_name("other", current_user, self.db)
+            
+        if res is None:
+            raise Exception(f"Labels not found for name {label_name}")
         return res
     
     def message_modify_label(self, req: MessageModifyLabelRequest, current_user: UserRequest):
@@ -191,7 +208,7 @@ class EmailService:
             provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
-        
+
         req = MessageModifyLabelRequest(
             id=msg_id,
             addLabelIds=[label_id], 

@@ -6,7 +6,7 @@ from app.schemas.color import Color
 
 # class EnumCategory(Enum):
 #     APPOINTMENT = "Appointment"
-#     PROMOTIOL = "Promotiol"
+#     PROMOTION = "Promotion"
 #     MEETING = "Meeting"
 #     INVITATION = "Invitation"
 #     INVOICE = "Invoice"
@@ -56,16 +56,6 @@ INITIAL_LABELS = {
     },
     "meeting": {
         "name": "meeting",
-        "messageListVisibility": MessageListVisibility.SHOW,
-        "labelListVisibility": LabelListVisibility.SHOW,
-        "type": "user",
-        "color": {
-            "textColor": Color.WHITE,
-            "backgroundColor": Color.BLACK
-        }
-    },
-    "promotional": {
-        "name": "promotional",
         "messageListVisibility": MessageListVisibility.SHOW,
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",

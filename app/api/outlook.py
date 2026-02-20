@@ -44,7 +44,10 @@ class OutlookAPI:
     def sync_labels(self, req: SyncLabelsRequest, current_user: UserRequest, db: SupabaseDB):
         pass
 
-    def get_label_by_id(self, req: GetLabelRequest, current_user: UserRequest, db: SupabaseDB):
+    def get_label_by_id(self, label_id: str, current_user: UserRequest, db: SupabaseDB):
+        pass
+
+    def get_label_by_name(self, label_name: str, current_user: UserRequest, db: SupabaseDB):
         pass
 
     def message_modify_label(self, req: MessageModifyLabelRequest, current_user: UserRequest, db: SupabaseDB):

@@ -1,8 +1,8 @@
-from http.client import HTTPException
-from time import time
+import time
 from app.api.dify import DifyAPI
 from app.api.gmail import GmailAPI
 from app.api.outlook import OutlookAPI
+from app.schemas.email import Sender
 from config import Config
 from database import SupabaseDB
 
@@ -20,6 +20,7 @@ class DifyService():
         self.db = db
     
     def send_to_dify(self, req: DataInsertSummaryRequest):
+        time.sleep(5)
         try:
             print(f"Starting Dify API request for id {req.id} in the background.", flush=True)
             dify_api = DifyAPI(self.config)
@@ -46,6 +47,9 @@ class DifyService():
             print(f"Dify API Response time for id {req.id}: {res.data.elapsed_time}", flush=True)
             
             dify_res = res.data.outputs.clean_email
+            if dify_res.sender is not None and dify_res.sender.name is None:
+                dify_res.sender.name = req.sender
+
             if dify_res is not None:
                 self.db.upsert(
                     table='source_emails',
@@ -73,18 +77,19 @@ class DifyService():
                 else:
                     raise Exception(f"Invalid provider for id {req.id}")
                 
-                labels = provider_service.get_labels(req.current_user, self.db)
-                if labels is None:
-                    raise Exception(f"Labels not found for id {req.id}")
-                target_label_id = next((label.id for label in labels.categories if label.name == dify_res.email_category), None)
-                if target_label_id is None:
-                    raise Exception(f"Update labels not found for id {req.id}")
-                req_mod = MessageModifyLabelRequest(
-                    id=req.msg_id,
-                    addLabelIds=[target_label_id], 
-                    removeLabelIds=[]
+                if dify_res.email_category is None:
+                    raise Exception(f"Email category not found for id {req.id}")
+                
+                label = provider_service.get_label_by_name(dify_res.email_category, req.current_user, self.db)
+                if label is None:
+                    raise Exception(f"Label {dify_res.email_category} not found for user {req.current_user.email_address}")
+                if label.id:
+                    req_mod = MessageModifyLabelRequest(
+                        id=req.msg_id,
+                        addLabelIds=[label.id], 
+                        removeLabelIds=[]
                     )
-                provider_service.message_modify_label(req_mod, req.current_user, self.db)                    
+                    provider_service.message_modify_label(req_mod, req.current_user, self.db)                    
                 
                 return
         except Exception as e:

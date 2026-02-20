@@ -5,7 +5,8 @@ from fastapi import Depends
 
 from app.schemas.request import UserRequest
 
-from dependencies import get_current_user,get_user_service
+from database import SupabaseDB
+from dependencies import get_current_user,get_user_service,get_db
 
 router = APIRouter(
     prefix="/user",
@@ -21,17 +22,29 @@ async def profile(
         res = user_service.get_user_profile(req)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.put("/setup_pin")
+@router.post("/setup_pin")
 async def setup_pin(
     pin: str,
     req: UserRequest = Depends(get_current_user),
-    user_service: UserService = Depends(get_user_service)
+    user_service: UserService = Depends(get_user_service),
+    database: SupabaseDB = Depends(get_db)
 ):
     try:
-        
-        return "PIN setup successfully"
+        user_service.setup_pin(req, pin, database)
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/verify_pin")
+async def verify_pin(
+    pin: str,
+    req: UserRequest = Depends(get_current_user),
+    user_service: UserService = Depends(get_user_service),
+    database: SupabaseDB = Depends(get_db)
+):
+    try:
+        res = user_service.verify_pin(req, pin, database)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
