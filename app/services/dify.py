@@ -1,8 +1,8 @@
+from ast import List
 import time
 from app.api.dify import DifyAPI
 from app.api.gmail import GmailAPI
 from app.api.outlook import OutlookAPI
-from app.schemas.email import Sender
 from config import Config
 from database import SupabaseDB
 
@@ -11,7 +11,11 @@ from app.schemas.dify import (
 )
 from app.schemas.request import (
     DataInsertSummaryRequest,
-    MessageModifyLabelRequest
+    MessageModifyLabelRequest,
+    OverviewRequest
+)
+from app.schemas.response import (
+    OverviewResponse
 )
 
 class DifyService():
@@ -19,7 +23,7 @@ class DifyService():
         self.config = config
         self.db = db
     
-    def send_to_dify(self, req: DataInsertSummaryRequest):
+    def send_to_summary(self, req: DataInsertSummaryRequest):
         time.sleep(5)
         try:
             print(f"Starting Dify API request for id {req.id} in the background.", flush=True)
@@ -94,3 +98,10 @@ class DifyService():
                 return
         except Exception as e:
             print(f"Exception for id {req.id}: {str(e)}", flush=True)
+
+    def send_to_overview(self, req: OverviewRequest):
+        dify_api = DifyAPI(self.config)
+        res = dify_api.get_overview(req)
+        return res
+    
+        

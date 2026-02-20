@@ -1,9 +1,12 @@
+from ast import List
+from sqlalchemy import column
 from app.schemas.dify import Status
 from app.schemas.email import Sender
 from app.schemas.request import (
     DifySummaryRequest
 )
 from app.schemas.response import (
+    OverviewResponse,
     SourceEmailResponse, 
     EmailAIAnalysisResponse
 )
@@ -38,6 +41,7 @@ class DatabaseService():
         if res and len(res) > 0:
             return EmailAIAnalysisResponse(**res[0])
         return None
+    
     def get_source_email(self,                     
                         msg_id: str,
                         email_address: str
@@ -55,6 +59,32 @@ class DatabaseService():
             )
         if res and len(res) > 0:
             return SourceEmailResponse(**res[0])
+        return None
+
+    def get_overview(self, email_address: str):
+        columns = [
+            "source_email_id",
+            "sender",
+            "email_category",
+            "summary"
+        ]
+        columns_str = ', '.join(columns)
+
+        res = self.db.select(
+            table='email_ai_analysis',
+            columns=f"{columns_str}, source_emails!inner(user_email_address)",
+            eq={
+                'source_emails.user_email_address': email_address
+            },
+            contains={
+                'source_emails.email_tags': ['UNREAD']
+            }
+        )
+        if res and len(res) > 0:
+            overview_results = []
+            for r in res:
+                overview_results.append(OverviewResponse(**r))
+            return overview_results
         return None
 
     def upsert_sender(self, source_email_id: str, sender: Sender):
@@ -125,8 +155,8 @@ class DatabaseService():
          )
         if res and len(res) > 0:
             return SourceEmailResponse(**res[0])
-        return None
-    
+        return None  
+
     def upsert_status(self, source_email_id: str, status: str):
         res = self.db.upsert(
             table='source_emails',
@@ -139,3 +169,5 @@ class DatabaseService():
         if res and len(res) > 0:
             return SourceEmailResponse(**res[0])
         return None
+
+    

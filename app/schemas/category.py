@@ -80,8 +80,8 @@ INITIAL_LABELS = {
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",
         "color": {
-            "textColor": Color.RED_BRICK,
-            "backgroundColor": Color.RED_SALMON
+            "textColor": Color.GREEN_DEEP,
+            "backgroundColor": Color.GREEN_MINT
         }
     },
     "marketing": {
@@ -100,8 +100,8 @@ INITIAL_LABELS = {
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",
         "color": {
-            "textColor": Color.DARK_GRAY_1,
-            "backgroundColor": Color.OFF_WHITE_1
+            "textColor": Color.RED_DEEP,
+            "backgroundColor": Color.RED_SALMON
         }
     },
     "announcement": {
@@ -110,8 +110,8 @@ INITIAL_LABELS = {
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",
         "color": {
-            "textColor": Color.RED_DEEP,
-            "backgroundColor": Color.PEACH
+            "textColor": Color.BLUE_BABY,
+            "backgroundColor": Color.BLUE_PALE
         }
     },
     "other": {
@@ -120,8 +120,8 @@ INITIAL_LABELS = {
         "labelListVisibility": LabelListVisibility.SHOW,
         "type": "user",
         "color": {
-            "textColor": Color.DARK_GRAY_2,
-            "backgroundColor": Color.OFF_WHITE_2
+            "textColor": Color.BLACK,
+            "backgroundColor": Color.WHITE
         }
     }
 }

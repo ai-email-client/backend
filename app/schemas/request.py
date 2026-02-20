@@ -2,11 +2,12 @@ from typing import List,Optional
 from pydantic import BaseModel
 from app.schemas.category import Category
 from app.schemas.email import Message, Sender
+from app.schemas.response import OverviewResponse
 
 class UserRequest(BaseModel):
     email_address: str
     provider: str
-
+    
 class DifySummaryRequest(BaseModel):
     sender: str
     msg_id: str
@@ -64,7 +65,4 @@ class DraftCreateRequest(BaseModel):
     message: Message
 
 class OverviewRequest(BaseModel):
-    sender: Sender
-    email_category: str
-    summary: str
-    limit: Optional[int] = 50
+    data: List[OverviewResponse]

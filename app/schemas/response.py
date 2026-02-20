@@ -31,6 +31,12 @@ class EmailAIAnalysisResponse(BaseModel):
     extraction_status: Optional[str] = None
     confidence: Optional[float] = None
 
+class OverviewResponse(BaseModel):
+    source_email_id: str
+    sender: Sender
+    email_category: str
+    summary: str
+
 class CredentialResponse(BaseModel):
     access_token: str
     refresh_token: str

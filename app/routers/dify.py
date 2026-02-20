@@ -6,6 +6,7 @@ from app.services.database import DatabaseService
 from app.schemas.request import (
     DataInsertSummaryRequest,
     DifySummaryRequest,
+    OverviewRequest,
     UserRequest
 )
 from app.services.email import EmailService
@@ -78,11 +79,11 @@ async def set_summary(
                     return {"message": "Summary request is being processed in the background."}
                 else:
                     print(f"Previous Dify API request for msg_id {req.msg_id} resulted in an error. Retrying...", flush=True)
-                    background_tasks.add_task(dify_service.send_to_dify, dify_req)
+                    background_tasks.add_task(dify_service.send_to_summary, dify_req)
                     return {"message": "Previous summary request resulted in an error. Retrying in the background."}
             else:
                 print(f"No existing summary record for msg_id {req.msg_id}. Sending to Dify for processing.", flush=True)
-                background_tasks.add_task(dify_service.send_to_dify, dify_req)
+                background_tasks.add_task(dify_service.send_to_summary, dify_req)
                 return {"message": "Summary request submitted for processing."}
         else:
             inserted = database_service.upsert_email_source(req=req, user_email=current_user.email_address)
@@ -91,7 +92,7 @@ async def set_summary(
             print(f"No existing summary request for msg_id {inserted.id}. Creating new request.", flush=True)
             dify_req = DataInsertSummaryRequest(**inserted.model_dump(), sender=req.sender, current_user=current_user)
             database_service.upsert_status(source_email_id=inserted.id, status=Status.processing.value)            
-            background_tasks.add_task(dify_service.send_to_dify, dify_req)
+            background_tasks.add_task(dify_service.send_to_summary, dify_req)
         
         return {"message": "Summary request submitted for processing."}
     except Exception as e:
@@ -101,14 +102,19 @@ async def set_summary(
 @router.get("/overview")
 async def get_overview(
     current_user: UserRequest = Depends(get_current_user),
-    database_service: DatabaseService = Depends(get_database_service)
+    database_service: DatabaseService = Depends(get_database_service),
+    dify_service: DifyService = Depends(get_dify_service)
 ):
     try:
         res = None
 
+        data = database_service.get_overview(current_user.email_address)
+        if data is None:
+            raise HTTPException(status_code=404, detail="No overview data found")
         
-        
-        
+        res = dify_service.send_to_overview(OverviewRequest(data=data))
+        if res is None:
+            raise HTTPException(status_code=404, detail="Overview request failed")
         return res
     except Exception as e:
         print(e)

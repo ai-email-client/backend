@@ -3,6 +3,7 @@ import urllib3
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from app.schemas.request import OverviewRequest
 from app.utility import clean_text
 from config import Config
 from app.schemas.response import DifyResponse 
@@ -56,6 +57,46 @@ class DifyAPI():
             response.raise_for_status()
             
             return DifyResponse(**response.json())
+
+        except Exception as e:
+            print(f"Error in DifyAPI.get_summary: {e}")
+            return None
+
+    def get_overview(self, req: OverviewRequest):
+        url = self.config.DIFY_URL
+        if not url:
+            raise Exception("Dify URL is not configured")
+
+        headers = {
+            "Authorization": f"Bearer {self.config.DIFY_API_KEY}",
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true"
+        }
+        
+        try:
+            session = requests.Session()
+            
+            retry_strategy = Retry(
+                total=3,
+                backoff_factor=1,
+                status_forcelist=[429, 500, 502, 503, 504],
+            )
+            
+            adapter = HTTPAdapter(max_retries=retry_strategy)
+            session.mount("http://", adapter)
+            session.mount("https://", adapter)
+            
+            response = session.post(
+                url=url,
+                headers=headers,
+                json=req.model_dump(),
+                verify=False,      
+                timeout=(10, 500)
+            )
+            
+            response.raise_for_status()
+            
+            return response
 
         except Exception as e:
             print(f"Error in DifyAPI.get_summary: {e}")
