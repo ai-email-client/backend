@@ -1,4 +1,4 @@
-from ast import List
+from typing import List
 from sqlalchemy import column
 from app.schemas.dify import Status
 from app.schemas.email import Sender

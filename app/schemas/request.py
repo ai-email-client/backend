@@ -64,5 +64,10 @@ class DraftCreateRequest(BaseModel):
     id: str
     message: Message
 
+class OverviewItemRequest(BaseModel):
+    sender: Sender
+    email_category: str
+    summary: str
+
 class OverviewRequest(BaseModel):
-    data: List[OverviewResponse]
+    data: List[OverviewItemRequest]

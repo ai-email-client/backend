@@ -1,3 +1,4 @@
+from typing import List
 import requests
 import urllib3
 from requests.adapters import HTTPAdapter
@@ -6,7 +7,7 @@ from urllib3.util.retry import Retry
 from app.schemas.request import OverviewRequest
 from app.utility import clean_text
 from config import Config
-from app.schemas.response import DifyResponse 
+from app.schemas.response import DifyResponse, OverviewResponse 
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -72,6 +73,14 @@ class DifyAPI():
             "Content-Type": "application/json",
             "ngrok-skip-browser-warning": "true"
         }
+
+        payload = {
+            "inputs": {
+                **req.model_dump()
+            },
+            "response_mode": "blocking",
+            "user": "frontend-test"
+        }
         
         try:
             session = requests.Session()
@@ -89,7 +98,7 @@ class DifyAPI():
             response = session.post(
                 url=url,
                 headers=headers,
-                json=req.model_dump(),
+                json=payload,
                 verify=False,      
                 timeout=(10, 500)
             )
@@ -99,5 +108,5 @@ class DifyAPI():
             return response
 
         except Exception as e:
-            print(f"Error in DifyAPI.get_summary: {e}")
+            print(f"Error in DifyAPI.get_overview: {e}")
             return None

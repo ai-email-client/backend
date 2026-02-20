@@ -112,7 +112,7 @@ async def get_overview(
         if data is None:
             raise HTTPException(status_code=404, detail="No overview data found")
         
-        res = dify_service.send_to_overview(OverviewRequest(data=data))
+        res = dify_service.send_to_overview(data)
         if res is None:
             raise HTTPException(status_code=404, detail="Overview request failed")
         return res

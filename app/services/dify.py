@@ -1,4 +1,4 @@
-from ast import List
+from typing import List
 import time
 from app.api.dify import DifyAPI
 from app.api.gmail import GmailAPI
@@ -12,7 +12,8 @@ from app.schemas.dify import (
 from app.schemas.request import (
     DataInsertSummaryRequest,
     MessageModifyLabelRequest,
-    OverviewRequest
+    OverviewItemRequest,
+    OverviewRequest,
 )
 from app.schemas.response import (
     OverviewResponse
@@ -99,9 +100,17 @@ class DifyService():
         except Exception as e:
             print(f"Exception for id {req.id}: {str(e)}", flush=True)
 
-    def send_to_overview(self, req: OverviewRequest):
+    def send_to_overview(self, req: List[OverviewResponse]):
         dify_api = DifyAPI(self.config)
-        res = dify_api.get_overview(req)
+        dify_req = []
+        for item in req:
+            dify_req.append(OverviewItemRequest(
+                sender=item.sender,
+                email_category=item.email_category,
+                summary=item.summary
+            ))
+        
+        res = dify_api.get_overview(OverviewRequest(data=dify_req))
         return res
     
         
