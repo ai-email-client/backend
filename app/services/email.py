@@ -6,11 +6,10 @@ from app.api.gmail import GmailAPI
 from app.api.outlook import OutlookAPI
 
 from app.schemas.request import (
-    EmailFetchRequest, EmailMessageRequest, 
-    AttachmentRequest,
+    EmailFetchRequest,
     MessageIdRequest, MessageBatchDeleteRequest,
     CreateLabelRequest, MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
-    GetLabelRequest, SyncLabelsRequest,UserRequest,DraftCreateRequest
+    SyncLabelsRequest,UserRequest,DraftCreateRequest
 )
 
 class EmailService:
@@ -40,7 +39,7 @@ class EmailService:
         res = provider_service.fetch_emails(req, current_user, self.db)
         return res
     
-    def get_message_by_id(self, req: EmailMessageRequest, current_user: UserRequest):
+    def get_message_by_id(self, msg_id: str, current_user: UserRequest):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
@@ -48,7 +47,9 @@ class EmailService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
-        res = provider_service.get_message_by_id(req, current_user, self.db)
+        res = provider_service.get_message_by_id(msg_id, current_user, self.db)
+        if res is None:
+            raise HTTPException(status_code=404, detail=f"Message with id {msg_id} not found")
 
         return res
 
@@ -64,15 +65,15 @@ class EmailService:
 
         return res
 
-    def get_attachments(self, req: AttachmentRequest, current_user: UserRequest):
+    def get_attachments(self, msg_id: str, attachment_id: str, current_user: UserRequest):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
             provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
-        
-        res = provider_service.get_attachments(req, current_user, self.db)
+
+        res = provider_service.get_attachments(msg_id, attachment_id, current_user, self.db)
 
         return res
     
@@ -153,7 +154,7 @@ class EmailService:
 
         return res
 
-    def message_delete(self, req: MessageIdRequest, current_user: UserRequest):
+    def message_delete(self, msg_id: str, current_user: UserRequest):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
@@ -161,7 +162,7 @@ class EmailService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
-        res = provider_service.message_delete(req, current_user, self.db)
+        res = provider_service.message_delete(msg_id, current_user, self.db)
 
         return res
 
@@ -177,7 +178,7 @@ class EmailService:
 
         return res
     
-    def message_trash(self, req: MessageIdRequest, current_user: UserRequest):
+    def message_trash(self, msg_id: str, current_user: UserRequest):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
@@ -185,11 +186,11 @@ class EmailService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
-        res = provider_service.message_trash(req, current_user, self.db)
+        res = provider_service.message_trash(msg_id, current_user, self.db)
 
         return res
 
-    def message_untrash(self, req: MessageIdRequest, current_user: UserRequest):
+    def message_untrash(self, msg_id: str, current_user: UserRequest):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
@@ -197,7 +198,7 @@ class EmailService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         
-        res = provider_service.message_untrash(req, current_user, self.db)
+        res = provider_service.message_untrash(msg_id, current_user, self.db)
 
         return res
     

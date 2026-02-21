@@ -22,18 +22,11 @@ class DataInsertSummaryRequest(BaseModel):
     email_tags: List[str]
     current_user: UserRequest
 
-class AttachmentRequest(BaseModel):
-    msg_id: str
-    attachment_id: str
-
 class EmailFetchRequest(BaseModel):
     label: List[Optional[str]] = ["INBOX"]
     limit: Optional[int] = 5    
     query: Optional[str] = ''
     page_token: Optional[str] = None
-
-class EmailMessageRequest(BaseModel):
-    msg_id: str
 
 class MessageIdRequest(BaseModel):
     id: str

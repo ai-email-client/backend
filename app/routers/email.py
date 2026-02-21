@@ -2,10 +2,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from config import Config
 
 from app.schemas.request import (
-    UserRequest, EmailFetchRequest, EmailMessageRequest, AttachmentRequest,
-    MessageIdRequest, MessageBatchDeleteRequest, CreateLabelRequest, 
-    MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
-    GetLabelRequest, SyncLabelsRequest
+    UserRequest, EmailFetchRequest, MessageIdRequest, MessageBatchDeleteRequest, 
+    CreateLabelRequest, MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
+    SyncLabelsRequest
 )
 
 from app.services.email import EmailService
@@ -24,11 +23,8 @@ async def initialize_labels(
 ):
     try:
         res = email_service.initialize_labels(current_user)
-
         return res
-        
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
 @router.post("/messages")
@@ -39,24 +35,19 @@ async def fetch_emails(
 ):
     try:
        return email_service.fetch_emails(req, current_user)
-        
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
-@router.post("/message/get")
+@router.get("/message/{msg_id}")
 async def get_message_by_id(
-    req: EmailMessageRequest,
+    msg_id: str,
     current_user: UserRequest = Depends(get_current_user),
     email_service: EmailService = Depends(get_email_service)
 ):
     try:
-        res = email_service.get_message_by_id(req, current_user)
-
+        res = email_service.get_message_by_id(msg_id, current_user)
         return res
-        
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
 @router.get("/labels")
@@ -66,26 +57,21 @@ async def get_labels(
 ):
     try:
         res = email_service.get_labels(current_user)
-
         return res
-        
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
         
-@router.post("/message/attachment")
+@router.get("/message/{msg_id}/attachments/{attachment_id}")
 async def get_attachments(
-    req: AttachmentRequest,
+    msg_id: str,
+    attachment_id: str,
     current_user: UserRequest = Depends(get_current_user),
     email_service: EmailService = Depends(get_email_service)
 ):
     try:
-        res = email_service.get_attachments(req, current_user)
-
+        res = email_service.get_attachments(msg_id, attachment_id, current_user)
         return res
-        
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
 @router.post("/label/create")
@@ -96,11 +82,8 @@ async def create_label(
 ):
     try:
         res = email_service.create_label(req, current_user)
-
         return res
-        
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
 @router.post("/labels/sync")
@@ -111,26 +94,20 @@ async def sync_labels(
 ):
     try:
         res = email_service.sync_labels(req, current_user)
-
         return res
-        
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
-@router.post("/label/get")
+@router.get("/label/{label_id}")
 async def get_label_by_id(
-    req: GetLabelRequest,
+    label_id: str,
     current_user: UserRequest = Depends(get_current_user),
     email_service: EmailService = Depends(get_email_service)
 ):
     try:
-        res = email_service.get_label_by_id(req, current_user)
-
+        res = email_service.get_label_by_id(label_id, current_user)
         return res
-        
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
 @router.post("/message/modify")
@@ -141,11 +118,8 @@ async def modify_label(
 ):
     try:
         res = email_service.message_modify_label(req, current_user)
-
         return res
-        
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
 @router.post("/message/batch_modify")
@@ -156,26 +130,20 @@ async def batch_modify_label(
 ):
     try:
         res = email_service.message_batch_modify_label(req, current_user)
-
         return res
-        
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
-@router.post("/message/delete")
+@router.delete("/message/{msg_id}")
 async def delete_message(
-    req: MessageIdRequest,
+    msg_id: str,
     current_user: UserRequest = Depends(get_current_user),
     email_service: EmailService = Depends(get_email_service)
 ):
     try:
-        res = email_service.message_delete(req, current_user)
-
+        res = email_service.message_delete(msg_id, current_user)
         return res
-        
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
 @router.post("/message/batch_delete")
@@ -186,39 +154,30 @@ async def batch_delete_message(
 ):
     try:
         res = email_service.message_batch_delete(req, current_user)
-
         return res
-        
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
-@router.post("/message/trash")
+@router.put("/message/trash/{msg_id}")
 async def trash_message(
-    req: MessageIdRequest,
+    msg_id: str,
     current_user: UserRequest = Depends(get_current_user),
     email_service: EmailService = Depends(get_email_service)
 ):
     try:
-        res = email_service.message_trash(req, current_user)
-
-        return res
-        
+        email_service.message_trash(msg_id, current_user)
+        return HTTPException(status_code=200, detail="Message trashed successfully")       
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
-@router.post("/message/untrash")
+@router.put("/message/untrash/{msg_id}")
 async def untrash_message(
-    req: MessageIdRequest,
+    msg_id: str,
     current_user: UserRequest = Depends(get_current_user),
     email_service: EmailService = Depends(get_email_service)
 ):
     try:
-        res = email_service.message_untrash(req, current_user)
-
-        return res
-        
+        email_service.message_untrash(msg_id, current_user)       
+        return HTTPException(status_code=200, detail="Message untrashed successfully")
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))

@@ -15,11 +15,9 @@ from app import utility
 from database import SupabaseDB
 
 from app.schemas.request import (
-    EmailFetchRequest, EmailMessageRequest,
-    AttachmentRequest, MessageIdRequest, MessageBatchDeleteRequest, 
-    GetLabelRequest, UserRequest, CreateLabelRequest, 
-    MessageModifyLabelRequest, MessageBatchModifyLabelRequest,
-    SyncLabelsRequest
+    EmailFetchRequest, MessageIdRequest, MessageBatchDeleteRequest, 
+    UserRequest, CreateLabelRequest, MessageModifyLabelRequest, 
+    MessageBatchModifyLabelRequest, SyncLabelsRequest
 )
 
 from app.schemas.response import (
@@ -297,7 +295,7 @@ class GmailAPI:
             raise Exception(f"Error function fetch_emails: {str(e)}")
 
     def get_message_by_id(self, 
-        req: EmailMessageRequest,
+        msg_id: str,
         current_user: UserRequest,
         db: SupabaseDB
     ) -> EmailDetailResponse:
@@ -305,7 +303,7 @@ class GmailAPI:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
 
-            result = service.users().messages().get(userId='me',id=req.msg_id).execute()
+            result = service.users().messages().get(userId='me',id=msg_id).execute()
             payload = result['payload']
             subject = utility.get_email_header(payload, 'Subject')
             sender = utility.get_email_header(payload, 'From')
@@ -329,7 +327,7 @@ class GmailAPI:
             attachments = utility.get_attachments(payload)
 
             return EmailDetailResponse(
-                msg_id=req.msg_id,
+                msg_id=msg_id,
                 subject=subject,
                 sender=sender,
                 snippet=snippet,
@@ -375,7 +373,8 @@ class GmailAPI:
             raise Exception(f"Error function get_labels: {str(e)}")
 
     def get_attachments(self, 
-        req: AttachmentRequest,
+        msg_id: str,
+        attachment_id: str,
         current_user: UserRequest,
         db: SupabaseDB
     ):
@@ -384,8 +383,8 @@ class GmailAPI:
             service = self.build_service(credentials)
             results = service.users().messages().attachments().get(
                 userId='me', 
-                id=req.attachment_id,
-                messageId=req.msg_id
+                id=attachment_id,
+                messageId=msg_id
             ).execute()
             return results
         except Exception as e:
@@ -513,14 +512,14 @@ class GmailAPI:
             raise Exception(f"Error function message_batch_modify_label: {str(e)}")
     
     def message_delete(self, 
-        req: MessageIdRequest,
+        msg_id: str,
         current_user: UserRequest,
         db: SupabaseDB
     ):
         try:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
-            results = service.users().messages().delete(userId='me', id=req.id).execute()
+            results = service.users().messages().delete(userId='me', id=msg_id).execute()
             return results
         except Exception as e:
             raise Exception(f"Error function message_delete: {str(e)}")
@@ -542,27 +541,27 @@ class GmailAPI:
             raise Exception(f"Error function message_batch_delete: {str(e)}")
 
     def message_trash(self, 
-        req: MessageIdRequest,
+        msg_id: str,
         current_user: UserRequest,
         db: SupabaseDB
     ):
         try:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
-            results = service.users().messages().trash(userId='me', id=req.id).execute()
+            results = service.users().messages().trash(userId='me', id=msg_id).execute()
             return results
         except Exception as e:
             raise Exception(f"Error function message_trash: {str(e)}")
     
     def message_untrash(self, 
-        req: MessageIdRequest,
+        msg_id: str,
         current_user: UserRequest,
         db: SupabaseDB
     ):
         try:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
-            results = service.users().messages().untrash(userId='me', id=req.id).execute()
+            results = service.users().messages().untrash(userId='me', id=msg_id).execute()
             return results
         except Exception as e:
             raise Exception(f"Error function message_untrash: {str(e)}")
