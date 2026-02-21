@@ -15,7 +15,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 def get_config():
     return Config()
 
-def get_db(config: Config = Depends(get_config)):
+def get_supabase_db(config: Config = Depends(get_config)):
     return SupabaseDB(config)
     
 def get_current_user(token: str = Depends(oauth2_scheme)):
@@ -37,28 +37,28 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     
 def get_dify_service(
     config: Config = Depends(get_config),
-    db: SupabaseDB = Depends(get_db)
+    db: SupabaseDB = Depends(get_supabase_db)
 ):
     return DifyService(config, db)
 
 def get_database_service(
     config: Config = Depends(get_config),
-    db: SupabaseDB = Depends(get_db)
+    db: SupabaseDB = Depends(get_supabase_db)
 ):
     return DatabaseService(config, db)
 
 def get_auth_service(
     config: Config = Depends(get_config),
-    db: SupabaseDB = Depends(get_db)
+    db: SupabaseDB = Depends(get_supabase_db)
 ):
     return AuthService(config, db)
 def get_user_service(
     config: Config = Depends(get_config),
-    db: SupabaseDB = Depends(get_db)
+    db: SupabaseDB = Depends(get_supabase_db)
 ):
     return UserService(config, db)
 def get_email_service(
     config: Config = Depends(get_config),
-    db: SupabaseDB = Depends(get_db)
+    db: SupabaseDB = Depends(get_supabase_db)
 ):
     return EmailService(config, db)

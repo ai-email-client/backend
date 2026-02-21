@@ -4,7 +4,7 @@ from app.services.database import DatabaseService
 from app.schemas.request import (
     UserRequest
 )
-from dependencies import get_db, get_current_user
+from dependencies import get_database_service, get_current_user
 
 router = APIRouter(
     prefix="/database",
@@ -15,7 +15,7 @@ router = APIRouter(
 async def get_summary(
     msg_id: str,
     current_user: UserRequest = Depends(get_current_user),
-    service: DatabaseService = Depends(get_db)
+    service: DatabaseService = Depends(get_database_service)
 ):
     try:
         source_email = service.get_source_email(msg_id, current_user.email_address)
@@ -32,7 +32,7 @@ async def get_summary(
 async def get_source_email(
     msg_id: str,
     current_user: UserRequest = Depends(get_current_user),
-    service: DatabaseService = Depends(get_db)
+    service: DatabaseService = Depends(get_database_service)
 ):
     try:
         res = service.get_source_email(msg_id, current_user.email_address)
@@ -47,7 +47,7 @@ async def get_source_email(
 @router.get("/get-user-pin")
 async def get_user_pin(
     current_user: UserRequest = Depends(get_current_user),
-    service: DatabaseService = Depends(get_db)
+    service: DatabaseService = Depends(get_database_service)
 ):
     try:
         res = service.get_user_pin(current_user.email_address)
@@ -65,7 +65,7 @@ async def upsert_email_tags(
     msg_id: str,
     email_tags: str,
     current_user: UserRequest = Depends(get_current_user),
-    service: DatabaseService = Depends(get_db)
+    service: DatabaseService = Depends(get_database_service)
 ):
     try:
         source_email = service.get_source_email(msg_id, current_user.email_address)

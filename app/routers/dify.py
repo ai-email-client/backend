@@ -76,15 +76,15 @@ async def set_summary(
                     return summary_record
                 elif status == Status.processing.value:
                     print(f"Summary for msg_id {req.msg_id} is still processing.", flush=True)
-                    return {"message": "Summary request is being processed in the background."}
+                    return 
                 else:
                     print(f"Previous Dify API request for msg_id {req.msg_id} resulted in an error. Retrying...", flush=True)
                     background_tasks.add_task(dify_service.send_to_summary, dify_req)
-                    return {"message": "Previous summary request resulted in an error. Retrying in the background."}
+                    return 
             else:
                 print(f"No existing summary record for msg_id {req.msg_id}. Sending to Dify for processing.", flush=True)
                 background_tasks.add_task(dify_service.send_to_summary, dify_req)
-                return {"message": "Summary request submitted for processing."}
+                return 
         else:
             inserted = database_service.upsert_email_source(req=req, user_email=current_user.email_address)
             if inserted is None:
@@ -94,7 +94,7 @@ async def set_summary(
             database_service.upsert_status(source_email_id=inserted.id, status=Status.processing.value)            
             background_tasks.add_task(dify_service.send_to_summary, dify_req)
         
-        return {"message": "Summary request submitted for processing."}
+        return 
     except Exception as e:
         print(e)
         return HTTPException(status_code=500, detail=str(e))
