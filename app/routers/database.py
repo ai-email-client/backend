@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from app.schemas.dify import Status
 from config import Config
 from app.services.database import DatabaseService
 from app.schemas.request import (
@@ -20,12 +21,14 @@ async def get_summary(
     try:
         source_email = service.get_source_email(msg_id, current_user.email_address)
         if source_email is None:
-            raise HTTPException(status_code=404, detail="Source email not found for the given msg_id and user")
+            return None
         res = service.get_summary(source_email.id)
+        if res is None:
+            return None
 
         return res
     except Exception as e:
-        print(e)
+        
         return HTTPException(status_code=500, detail=str(e))
     
 @router.get("/get_source_email/{msg_id}")
@@ -41,7 +44,7 @@ async def get_source_email(
 
         return res
     except Exception as e:
-        print(e)
+        
         return HTTPException(status_code=500, detail=str(e))
     
 @router.get("/get-user-pin")
@@ -56,7 +59,7 @@ async def get_user_pin(
 
         return res
     except Exception as e:
-        print(e)
+        
         return HTTPException(status_code=500, detail=str(e)
 )
         
@@ -76,5 +79,21 @@ async def upsert_email_tags(
 
         return res
     except Exception as e:
-        print(e)
+        
+        return HTTPException(status_code=500, detail=str(e))
+
+@router.get("/check_summary/{msg_id}")
+async def check_summary(
+    msg_id: str,
+    current_user: UserRequest = Depends(get_current_user),
+    service: DatabaseService = Depends(get_database_service)
+):
+    try:
+        source_email = service.get_source_email(msg_id, current_user.email_address)
+        if source_email is None or source_email.status != Status.done.value:
+            return False
+
+        return True
+    except Exception as e:
+        
         return HTTPException(status_code=500, detail=str(e))

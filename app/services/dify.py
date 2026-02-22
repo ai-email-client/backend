@@ -111,6 +111,6 @@ class DifyService():
             ))
         
         res = dify_api.get_overview(OverviewRequest(data=dify_req))
-        return res
+        return dify_req
     
         

@@ -1,3 +1,4 @@
+from turtle import radians
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
 from app.schemas.dify import Status
 from app.schemas.email import Sender
@@ -96,7 +97,6 @@ async def set_summary(
         
         return 
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
 
 @router.get("/overview")
@@ -110,12 +110,11 @@ async def get_overview(
 
         data = database_service.get_overview(current_user.email_address)
         if data is None:
-            raise HTTPException(status_code=404, detail="No overview data found")
+            return HTTPException(status_code=404, detail="No overview data found")
         
         res = dify_service.send_to_overview(data)
         if res is None:
-            raise HTTPException(status_code=404, detail="Overview request failed")
+            return HTTPException(status_code=404, detail="Overview request failed")
         return res
     except Exception as e:
-        print(e)
         return HTTPException(status_code=500, detail=str(e))
