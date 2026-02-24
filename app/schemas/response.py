@@ -99,6 +99,10 @@ class EmailFetchPlainResponse(BaseModel):
     messages: List[EmailPlainResponse]
     page_token: Optional[str] = None
 
-
 class CategoryListResponse(BaseModel):
     categories: List[Category] 
+
+class WritterResponse(BaseModel):
+    tone_used: Optional[str] = None
+    draft: Optional[str] = None
+    confidence: Optional[float] = None

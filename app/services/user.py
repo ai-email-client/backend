@@ -30,14 +30,14 @@ class UserService:
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-    def setup_pin(self, req: UserRequest, pin: str, db: SupabaseDB):
+    def setup_pin(self, req: UserRequest, pin: str):
         if self.config.SECRET_KEY is None:
             raise HTTPException(status_code=400, detail="Secret key not found")
         
         pin = hash_pin(pin, self.config.SECRET_KEY)
         try:
-            db.upsert(
-                table='users',
+            self.db.upsert(
+                table='google_accounts',
                 data={
                     'pin': pin, 
                     'email_address': req.email_address
@@ -47,11 +47,11 @@ class UserService:
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
 
-    def verify_pin(self, req: UserRequest, pin: str, db: SupabaseDB):
+    def verify_pin(self, req: UserRequest, pin: str):
         if self.config.SECRET_KEY is None:
             raise HTTPException(status_code=400, detail="Secret key not found")
-        res = db.select(
-            table='users',
+        res = self.db.select(
+            table='google_accounts',
             columns='pin',
             eq={'email_address': req.email_address}
         )
@@ -61,4 +61,17 @@ class UserService:
             raise HTTPException(status_code=401, detail="Invalid PIN")
         
         return  verify_pin(pin, res[0]['pin'], self.config.SECRET_KEY)
-        
+
+    def has_pin(self, req: UserRequest):
+        try:
+            res = self.db.select(
+                table='google_accounts',
+                columns='pin',
+                eq={'email_address': req.email_address}
+            )
+            print(res)
+            if res[0]['pin'] == '' or res[0]['pin'] is None:
+                return False
+            return True
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))

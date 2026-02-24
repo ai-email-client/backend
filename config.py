@@ -17,7 +17,9 @@ class Config:
         self.SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
         self.DIFY_URL = os.getenv("DIFY_URL")
-        self.DIFY_API_KEY = os.getenv("DIFY_API_KEY")
+        self.DIFY_SUMMARY = os.getenv("DIFY_SUMMARY")
+        self.DIFY_WRITER = os.getenv("DIFY_WRITER")
+        self.DIFY_OVERVIEW = os.getenv("DIFY_OVERVIEW")
 
         self.SECRET_KEY = os.getenv("SECRET_KEY")
         self.ALGORITHM = os.getenv("ALGORITHM")

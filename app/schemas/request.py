@@ -64,3 +64,10 @@ class OverviewItemRequest(BaseModel):
 
 class OverviewRequest(BaseModel):
     data: List[OverviewItemRequest]
+
+class WritterRequest(BaseModel):
+    email_text: Optional[str] = None
+    ai_summary: Optional[str] = None
+    user_draft: Optional[str] = None
+    topic: Optional[str] = None
+    target_person: Optional[str] = None

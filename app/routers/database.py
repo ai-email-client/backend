@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.schemas.dify import Status
-from config import Config
 from app.services.database import DatabaseService
 from app.schemas.request import (
     UserRequest

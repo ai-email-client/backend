@@ -81,7 +81,7 @@ class GmailAPI:
             creds['id_token'], 
             requests.Request(), 
             audience=self.config.GOOGLE_CLIENT_ID,
-            clock_skew_in_seconds=10
+            clock_skew_in_seconds=60
         )
 
     def exchange_code(self, 
