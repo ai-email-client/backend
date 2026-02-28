@@ -2,48 +2,68 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
+
+class Format(str, Enum):
+    FULL = "full"
+    MINIMAL = "minimal"
+    RAW = "raw"
+    METADATA = "metadata"
+
+
+class MessageResponse(BaseModel):
+    id: str
+    threadId: str
+
+
 class Attachment(BaseModel):
     filename: str
     mimeType: str
     size: int
     attachmentId: Optional[str] = None
 
+
 class ClassificationLabelFieldValue(BaseModel):
     fieldId: str
     selection: str
+
 
 class ClassificationLabelValue(BaseModel):
     labelId: str
     fields: List[ClassificationLabelFieldValue]
 
+
 class Header(BaseModel):
     name: str
     value: str
 
+
 class MessagePartBody(BaseModel):
-    attachmentId: str
-    size: int
-    data: str
+    attachmentId: Optional[str] = None
+    size: Optional[int] = 0
+    data: Optional[str] = None
+
 
 class MessagePart(BaseModel):
-    partId: str
-    mimeType: str
-    filename: str
-    headers: List[Header]
-    body: MessagePartBody
-    parts: List[Dict[str, Any]]
+    partId: Optional[str] = None
+    mimeType: Optional[str] = None
+    filename: Optional[str] = None
+    headers: Optional[List[Header]] = None
+    body: Optional["MessagePartBody"] = None
+    parts: Optional[List["MessagePart"]] = None
+
 
 class Message(BaseModel):
     id: str
     threadId: str
-    labelIds: List[str]
-    snippet: str
-    historyId: str
-    internalDate: str
-    payload: MessagePart
-    sizeEstimate: int
-    raw: str
-    classificationLabelValues: List[ClassificationLabelValue]
+    labelIds: Optional[List[str]] = None
+    snippet: Optional[str] = None
+    historyId: Optional[str] = None
+    internalDate: Optional[str] = None
+    payload: Optional["MessagePart"] = None
+    sizeEstimate: Optional[int] = None
+    raw: Optional[str] = None
+    classificationLabelValues: Optional[List["ClassificationLabelValue"]] = None
+
 
 class Sender(BaseModel):
     name: Optional[str] = None

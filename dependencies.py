@@ -19,8 +19,15 @@ def get_supabase_db(config: Config = Depends(get_config)):
     return SupabaseDB(config)
     
 def get_current_user(token: str = Depends(oauth2_scheme)):
+    secret_key = get_config().SECRET_KEY
+    algorithm = get_config().ALGORITHM
+
+    if secret_key is None:
+        raise HTTPException(status_code=401, detail="Invalid Token: Missing secret key")
+    if algorithm is None:
+        raise HTTPException(status_code=401, detail="Invalid Token: Missing algorithm")
     try:
-        payload = jwt.decode(token, get_config().SECRET_KEY, algorithms=[get_config().ALGORITHM])
+        payload = jwt.decode(token, secret_key, algorithms=[algorithm])
         provider = payload.get("provider")
         email_address = payload.get("email_address")
         

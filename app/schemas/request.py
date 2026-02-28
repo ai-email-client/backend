@@ -53,10 +53,6 @@ class MessageModifyLabelRequest(BaseModel):
     addLabelIds: List[str] = []
     removeLabelIds: List[str] = []
 
-class DraftCreateRequest(BaseModel):
-    id: str
-    message: Message
-
 class OverviewItemRequest(BaseModel):
     sender: Sender
     email_category: str
@@ -71,3 +67,8 @@ class WritterRequest(BaseModel):
     user_draft: Optional[str] = None
     topic: Optional[str] = None
     target_person: Optional[str] = None
+
+class CreateDraftRequest(BaseModel):
+    To: str
+    Subject: str
+    Content: str

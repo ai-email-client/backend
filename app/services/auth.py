@@ -7,6 +7,7 @@ from typing import Dict, Any
 from fastapi import HTTPException
 from app.utility import jwt_encode
 
+
 class AuthService:
     def __init__(self, config: Config, db: SupabaseDB):
         self.config = config
@@ -19,7 +20,7 @@ class AuthService:
             provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
-        
+
         res = provider_service.get_authorization_url()
 
         return res
@@ -31,14 +32,21 @@ class AuthService:
             provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
-        
+
         creds = provider_service.get_credentials(code, state, self.db)
+        if creds is None:
+            raise HTTPException(status_code=404, detail="Credentials not found")
         user_info = provider_service.get_user_info(creds)
+        if user_info is None:
+            raise HTTPException(status_code=404, detail="User not found")
         payload = {
-            "email_address": user_info.get('emailAddress'),
+            "email_address": user_info.get("emailAddress"),
             "provider": provider,
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(days=1)
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(days=1),
         }
+
+        if self.config.SECRET_KEY is None:
+            raise HTTPException(status_code=404, detail="Secret not found")
 
         token = jwt_encode(payload, self.config.SECRET_KEY)
 
@@ -53,7 +61,7 @@ class AuthService:
             provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
-        
+
         res = provider_service.get_user_info(creds)
 
         return res
