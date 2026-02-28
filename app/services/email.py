@@ -87,19 +87,23 @@ class EmailService:
         body_plain = utility.get_part_by_mimetype(res["payload"], "text/plain")
 
         if body_html is None:
-            raise HTTPException(status_code=404, detail="Message html body not found")
+            text_html = ""
+        else:
+            text_html = utility.decode_base64(body_html["body"]["data"])
+
         if body_plain is None:
             body_plain = utility.get_part_by_mimetype(res["payload"], "text/html")
-
-        if body_plain is None:
-            raise HTTPException(
-                status_code=404, detail="Message text or html body not found"
+            if body_plain is None:
+                raise HTTPException(
+                    status_code=404, detail="Message text or html body not found"
+                )
+            text_plain = utility.clean_html(
+                utility.decode_base64(body_plain["body"]["data"])
             )
+        else:
+            text_plain = utility.decode_base64(body_plain["body"]["data"])
 
-        text_plain = utility.decode_base64(body_plain["body"]["data"])
         res["text_plain"] = text_plain
-
-        text_html = utility.decode_base64(body_html["body"]["data"])
         res["text_html"] = text_html
 
         return res
@@ -146,7 +150,7 @@ class EmailService:
 
         return res
 
-    def sync_labels(self, req: SyncLabelsRequest, current_user: UserRequest):
+    def sync_labels(self, current_user: UserRequest):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":
@@ -154,8 +158,9 @@ class EmailService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
-        res = provider_service.sync_labels(req, current_user, self.db)
-
+        res = provider_service.sync_labels(current_user, self.db)
+        if res is None:
+            raise HTTPException(status_code=404, detail="Labels sync failed")
         return res
 
     def get_label_by_id(self, label_id: str, current_user: UserRequest):

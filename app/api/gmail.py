@@ -276,7 +276,7 @@ class GmailAPI:
 
             def callback(request_id, response, exception):
                 if exception is not None:
-                    print(f"เกิดข้อผิดพลาดที่ ID {request_id}: {exception}")
+                    print(f"Error ID {request_id}: {exception}")
                 else:
                     results.append(response)
 
@@ -402,28 +402,32 @@ class GmailAPI:
         except Exception as e:
             raise Exception(f"Error function create_label: {str(e)}")
 
-    def sync_labels(
-        self, req: SyncLabelsRequest, current_user: UserRequest, db: SupabaseDB
-    ):
+    def sync_labels(self, current_user: UserRequest, db: SupabaseDB):
         try:
             results = []
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
-            existing_labels = service.users().labels().list(userId="me").execute()
-            for name in req.names:
-                print("Syncing label:", name)
-                if name.lower() in INITIAL_LABELS and name not in [
-                    label["name"] for label in existing_labels["labels"]
-                ]:
-                    print("Creating label:", name)
-                    body = INITIAL_LABELS[name.lower()]
-                    results.append(
+
+            def callback(request_id, response, exception):
+                if exception is not None:
+                    print(f"Error ID {request_id}: {exception}")
+                else:
+                    results.append(response)
+
+            batch = service.new_batch_http_request()
+
+            labels = service.users().labels().list(userId="me").execute()
+            for missing in INITIAL_LABELS.keys():
+                if missing not in [label.get("name") for label in labels["labels"]]:
+                    req = (
                         service.users()
                         .labels()
-                        .create(userId="me", body=body)
-                        .execute()
+                        .create(userId="me", body=INITIAL_LABELS[missing])
                     )
-            return results
+                    batch.add(req, callback=callback)
+            batch.execute()
+            labels["labels"].extend(results)
+            return labels
         except google_api_errors.HttpError as e:
             if e.resp.status == 429:
                 raise Exception("Rate limit exceeded. Please try again later.")

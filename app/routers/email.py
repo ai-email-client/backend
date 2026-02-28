@@ -122,15 +122,15 @@ async def create_label(
         return HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/labels/sync")
+@router.get("/labels/sync")
 async def sync_labels(
-    req: SyncLabelsRequest,
     current_user: UserRequest = Depends(get_current_user),
     email_service: EmailService = Depends(get_email_service),
 ):
     try:
-        res = email_service.sync_labels(req, current_user)
-        return res
+        res = email_service.sync_labels(current_user)
+        response = CategoryListResponse(**res)
+        return response
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 
