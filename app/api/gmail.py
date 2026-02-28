@@ -329,41 +329,13 @@ class GmailAPI:
         except Exception as e:
             raise Exception(f"Error function get_message_by_id: {str(e)}")
 
-    def get_labels(
-        self, current_user: UserRequest, db: SupabaseDB
-    ) -> CategoryListResponse:
+    def get_labels(self, current_user: UserRequest, db: SupabaseDB):
         try:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
             results = service.users().labels().list(userId="me").execute()
-            labels = results.get("labels", [])
 
-            category_list = []
-            for label in labels:
-                category_list.append(
-                    Category(
-                        id=label.get("id"),
-                        name=label.get("name"),
-                        messageListVisibility=MessageListVisibility(
-                            label.get("messageListVisibility", "show")
-                        ),
-                        labelListVisibility=LabelListVisibility(
-                            label.get("labelListVisibility", "labelShow")
-                        ),
-                        type=CategoryType(label.get("type")),
-                        messagesTotal=label.get("messagesTotal", 0),
-                        messagesUnread=label.get("messagesUnread", 0),
-                        threadsTotal=label.get("threadsTotal", 0),
-                        threadsUnread=label.get("threadsUnread", 0),
-                        color=label.get(
-                            "color",
-                            CategoryColor(
-                                textColor="#000000", backgroundColor="#FFFFFF"
-                            ),
-                        ),
-                    )
-                )
-            return CategoryListResponse(categories=category_list)
+            return results
         except Exception as e:
             raise Exception(f"Error function get_labels: {str(e)}")
 

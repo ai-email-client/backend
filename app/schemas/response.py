@@ -7,8 +7,8 @@ from app.schemas.category import Category
 
 class MessagesResponse(BaseModel):
     messages: List[Message] = []
-    nextPageToken: str
-    resultSizeEstimate: int
+    nextPageToken: Optional[str] = None
+    resultSizeEstimate: Optional[int] = None
 
 
 class SourceEmailResponse(BaseModel):
@@ -119,7 +119,7 @@ class EmailFetchPlainResponse(BaseModel):
 
 
 class CategoryListResponse(BaseModel):
-    categories: List[Category]
+    labels: List[Category]
 
 
 class WritterResponse(BaseModel):

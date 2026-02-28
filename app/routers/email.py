@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from app.schemas.email import Format
-from app.schemas.response import MessagesResponse
+from app.schemas.category import Category
+from app.schemas.email import Format, Message
+from app.schemas.response import CategoryListResponse, MessagesResponse
 from config import Config
 
 from app.schemas.request import (
@@ -75,7 +76,8 @@ async def get_message_by_id(
 ):
     try:
         res = email_service.get_message_by_id(msg_id, param, current_user)
-        return res
+        response = Message(**res)
+        return response
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 
@@ -87,7 +89,8 @@ async def get_labels(
 ):
     try:
         res = email_service.get_labels(current_user)
-        return res
+        response = CategoryListResponse(**res)
+        return response
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 
@@ -140,7 +143,8 @@ async def get_label_by_id(
 ):
     try:
         res = email_service.get_label_by_id(label_id, current_user)
-        return res
+        response = Category(**res)
+        return response
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 

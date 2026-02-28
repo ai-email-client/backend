@@ -1,4 +1,5 @@
 from typing import List
+from app import utility
 from app.schemas.email import Format, Message
 from config import Config
 from database import SupabaseDB
@@ -82,6 +83,24 @@ class EmailService:
             raise HTTPException(
                 status_code=404, detail=f"Message with id {msg_id} not found"
             )
+        body_html = utility.get_part_by_mimetype(res["payload"], "text/html")
+        body_plain = utility.get_part_by_mimetype(res["payload"], "text/plain")
+
+        if body_html is None:
+            raise HTTPException(status_code=404, detail="Message html body not found")
+        if body_plain is None:
+            body_plain = utility.get_part_by_mimetype(res["payload"], "text/html")
+
+        if body_plain is None:
+            raise HTTPException(
+                status_code=404, detail="Message text or html body not found"
+            )
+
+        text_plain = utility.decode_base64(body_plain["body"]["data"])
+        res["text_plain"] = text_plain
+
+        text_html = utility.decode_base64(body_html["body"]["data"])
+        res["text_html"] = text_html
 
         return res
 
@@ -94,6 +113,8 @@ class EmailService:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
         res = provider_service.get_labels(current_user, self.db)
+        if res is None:
+            raise HTTPException(status_code=404, detail="Labels not found")
 
         return res
 
@@ -146,6 +167,8 @@ class EmailService:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
         res = provider_service.get_label_by_id(label_id, current_user, self.db)
+        if res is None:
+            raise HTTPException(status_code=404, detail="Label not found")
 
         return res
 

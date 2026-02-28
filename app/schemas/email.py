@@ -60,6 +60,8 @@ class Message(BaseModel):
     historyId: Optional[str] = None
     internalDate: Optional[str] = None
     payload: Optional["MessagePart"] = None
+    text_plain: Optional[str] = None
+    text_html: Optional[str] = None
     sizeEstimate: Optional[int] = None
     raw: Optional[str] = None
     classificationLabelValues: Optional[List["ClassificationLabelValue"]] = None
