@@ -1,50 +1,36 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
-from google_auth_oauthlib.flow import Flow
-from config import Config
-from app.providers.gmail import GmailProvider
-from app.providers.outlook import OutlookProvider
+from app.schemas.query import AuthQueryParams
+from dependencies import get_auth_service
+from app.services.auth import AuthService
 
-router = APIRouter(
-    prefix="/auth",
-    tags=["auth"]
-)
+router = APIRouter(prefix="/auth", tags=["auth"])
 
-config = Config()
 
 @router.get("/login/{provider}")
-async def login(provider: str):
-    if provider == "gmail":
-        provider_service = GmailProvider(config)
-    elif provider == "outlook":
-        provider_service = OutlookProvider(config)
-    else:
-        raise HTTPException(status_code=400, detail="Invalid provider")
-    
-    auth_url = provider_service.login()
-    
-    return RedirectResponse(url=auth_url)
+async def login(
+    provider: str,
+    response: Response,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+
+    res = auth_service.get_authorization_url(provider)
+
+    url = res[0]
+    state = res[1]
+
+    return {"url": url, "state": state}
+
 
 @router.get("/callback/{provider}")
 async def callback(
     provider: str,
-    code: str
+    request: Request,
+    params: AuthQueryParams = Depends(),
+    auth_service: AuthService = Depends(get_auth_service),
 ):
     try:
-        if provider == "gmail":
-            provider_service = GmailProvider(config)
-        elif provider == "outlook":
-            provider_service = OutlookProvider(config)
-        else:
-            raise HTTPException(status_code=400, detail="Invalid provider")
-        
-        token_data = provider_service.exchange_code_for_token(code)
-
-        access_token = token_data['access_token']
-        refresh_token = token_data['refresh_token']
-
-        url = f"http://localhost:5173/#/?provider={provider}&access_token={access_token}&refresh_token={refresh_token}"
-        
-        return RedirectResponse(url=url, status_code=302)
+        url = auth_service.handle_oauth_callback(provider, params.code, params.state)
+        return RedirectResponse(url=url)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
