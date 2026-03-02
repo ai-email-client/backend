@@ -50,3 +50,13 @@ class MessageParam:
     ):
         self.format = format
         self.metadataHeaders = metadataHeaders
+
+
+class AuthQueryParams:
+    def __init__(
+        self,
+        state: str = Query(default=None),
+        code: str = Query(default=None),
+    ):
+        self.state = state
+        self.code = code

@@ -87,15 +87,14 @@ class GmailAPI:
         except Exception as e:
             raise e
 
-    def verify_oauth2_token(self, creds: dict[str, str]):
-        return id_token.verify_oauth2_token(
-            creds["id_token"],
-            requests.Request(),
-            audience=self.config.GOOGLE_CLIENT_ID,
-            clock_skew_in_seconds=60,
-        )
+    def get_user_email(self, credentials):
+        service = self.build_service(credentials)
 
-    def exchange_code(self, authorization_code: str):
+        user_info = service.users().getProfile(userId="me").execute()
+
+        return user_info
+
+    def exchange_code(self, authorization_code: str, state: str = ""):
         """Exchange an authorization code for OAuth 2.0 credentials.
 
         Args:
@@ -108,7 +107,9 @@ class GmailAPI:
         Raises:
             CodeExchangeException: an error occurred.
         """
-        flow = Flow.from_client_config(self.client_config, " ".join(self.scopes))
+        flow = Flow.from_client_config(
+            self.client_config, " ".join(self.scopes), state=state
+        )
         flow.redirect_uri = self.config.GOOGLE_REDIRECT_URI
         try:
             credentials = flow.fetch_token(code=authorization_code)
@@ -117,7 +118,7 @@ class GmailAPI:
             logging.error("An error occurred: %s", error)
             raise CodeExchangeException(authorization_code)
 
-    def get_user_info(self, credentials: dict[str, str]) -> dict[str, str]:
+    def get_user_info(self, credentials):
         """Send a request to the UserInfo API to retrieve the user's information.
 
         Args:
@@ -143,7 +144,12 @@ class GmailAPI:
         """
         flow = Flow.from_client_config(self.client_config, " ".join(self.scopes))
         flow.redirect_uri = self.config.GOOGLE_REDIRECT_URI
-        return flow.authorization_url()
+        flow.autogenerate_code_verifier = False
+        url, state = flow.authorization_url(
+            include_granted_scopes="true",
+        )
+
+        return url, state
 
     def get_credentials(self, authorization_code: str, state: str, db: SupabaseDB):
         """Retrieve credentials using the provided authorization code.
@@ -163,14 +169,16 @@ class GmailAPI:
             refresh token.
         """
         try:
-            credentials = self.exchange_code(authorization_code)
-            user_info = self.verify_oauth2_token(credentials)
+            credentials = self.exchange_code(authorization_code, state)
+            user_info = self.get_user_info(credentials)
             if credentials.get("refresh_token") is not None:
                 return self.store_credentials(
-                    user_info.get("email", ""), credentials, db
+                    user_info.get("emailAddress", ""), credentials, db
                 )
             else:
-                return self.get_stored_credentials(user_info.get("email", ""), db)
+                return self.get_stored_credentials(
+                    user_info.get("emailAddress", ""), db
+                )
         except Exception as e:
             raise e
 
@@ -614,3 +622,47 @@ class GmailAPI:
             return results
         except Exception as e:
             raise Exception(f"Error function get_drafts: {str(e)}")
+
+    def update_draft(
+        self,
+        draft_id: str,
+        req: CreateDraftRequest,
+        current_user: UserRequest,
+        db: SupabaseDB,
+    ):
+        try:
+            credentials = self.get_stored_credentials(current_user.email_address, db)
+            service = self.build_service(credentials)
+
+            message = EmailMessage()
+
+            message["To"] = req.To
+            message["From"] = current_user.email_address
+            message["Subject"] = req.Subject
+            message.set_content(req.Content)
+
+            encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+            update_message = {"message": {"raw": encoded_message}}
+
+            results = (
+                service.users()
+                .drafts()
+                .update(userId="me", id=draft_id, body=update_message)
+                .execute()
+            )
+            return results
+        except Exception as e:
+            raise Exception(f"Error function update_draft: {str(e)}")
+
+    def send_draft(self, draft_id: str, current_user: UserRequest, db: SupabaseDB):
+        try:
+            credentials = self.get_stored_credentials(current_user.email_address, db)
+            service = self.build_service(credentials)
+
+            draft = service.users().drafts().get(userId="me", id=draft_id).execute()
+
+            results = service.users().drafts().send(userId="me", body=draft).execute()
+            return results
+        except Exception as e:
+            raise Exception(f"Error function send_draft: {str(e)}")

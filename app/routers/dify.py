@@ -1,27 +1,27 @@
 from turtle import radians
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, status
 from app.schemas.dify import Status
 from app.schemas.email import Sender
+from app.schemas.query import MessageParam
 from app.services.dify import DifyService
 from app.services.database import DatabaseService
 from app.schemas.request import (
     DataInsertSummaryRequest,
+    DifySummaryBatchRequest,
     DifySummaryRequest,
     OverviewRequest,
-    UserRequest
+    UserRequest,
 )
 from app.services.email import EmailService
-from dependencies import (   
-    get_current_user, 
-    get_dify_service, 
+from app.utility import get_email_header
+from dependencies import (
+    get_current_user,
+    get_dify_service,
     get_database_service,
-    get_email_service
+    get_email_service,
 )
 
-router = APIRouter(
-    prefix="/dify",
-    tags=["dify"]
-)
+router = APIRouter(prefix="/dify", tags=["dify"])
 
 
 @router.post("/summary")
@@ -31,79 +31,188 @@ async def set_summary(
     dify_service: DifyService = Depends(get_dify_service),
     database_service: DatabaseService = Depends(get_database_service),
     email_service: EmailService = Depends(get_email_service),
-    background_tasks: BackgroundTasks = BackgroundTasks()
+    background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
-    try:    
+    try:
         source_email = database_service.get_source_email(
-            req.msg_id, 
-            current_user.email_address
+            req.msg_id, current_user.email_address
         )
         if source_email:
 
             summary_record = database_service.get_summary(source_email.id)
             status = source_email.status
-            
+
             temp = source_email.model_dump()
             dify_req = DataInsertSummaryRequest(
-                **temp, 
-                current_user=current_user, 
-                sender=req.sender
-                )
-            
+                **temp, current_user=current_user, sender=req.sender
+            )
+
             if summary_record:
                 if status == Status.done.value:
-                    print(f"Summary for msg_id {source_email.id} already exists. Returning existing summary.", flush=True)
-                    
+                    print(
+                        f"Summary for msg_id {source_email.id} already exists. Returning existing summary.",
+                        flush=True,
+                    )
+
                     if summary_record.email_category:
-                        label = email_service.get_label_by_name(summary_record.email_category, current_user)
+                        label = email_service.get_label_by_name(
+                            summary_record.email_category, current_user
+                        )
                         if label.id not in req.email_tags and label.id:
-                            print(f"Summary for msg_id {source_email.id} is done. Updating labels.", flush=True)
+                            print(
+                                f"Summary for msg_id {source_email.id} is done. Updating labels.",
+                                flush=True,
+                            )
                             background_tasks.add_task(
-                                email_service.update_message_labels, 
-                                msg_id=source_email.msg_id, 
-                                label_id=label.id, 
-                                current_user=current_user
+                                email_service.update_message_labels,
+                                msg_id=source_email.msg_id,
+                                label_id=label.id,
+                                current_user=current_user,
                             )
                     if summary_record.sender is not None:
                         sender = Sender(
-                            name=req.sender,
-                            type=summary_record.sender.type
+                            name=req.sender, type=summary_record.sender.type
                         )
                         background_tasks.add_task(
-                            database_service.upsert_sender, 
+                            database_service.upsert_sender,
                             source_email_id=source_email.id,
-                            sender=sender
-                        )             
+                            sender=sender,
+                        )
                     return summary_record
                 elif status == Status.processing.value:
-                    print(f"Summary for msg_id {req.msg_id} is still processing.", flush=True)
-                    return 
+                    print(
+                        f"Summary for msg_id {req.msg_id} is still processing.",
+                        flush=True,
+                    )
+                    return
                 else:
-                    print(f"Previous Dify API request for msg_id {req.msg_id} resulted in an error. Retrying...", flush=True)
+                    print(
+                        f"Previous Dify API request for msg_id {req.msg_id} resulted in an error. Retrying...",
+                        flush=True,
+                    )
                     background_tasks.add_task(dify_service.send_to_summary, dify_req)
-                    return 
+                    return
             else:
-                print(f"No existing summary record for msg_id {req.msg_id}. Sending to Dify for processing.", flush=True)
+                print(
+                    f"No existing summary record for msg_id {req.msg_id}. Sending to Dify for processing.",
+                    flush=True,
+                )
                 background_tasks.add_task(dify_service.send_to_summary, dify_req)
-                return 
+                return
         else:
-            inserted = database_service.upsert_email_source(req=req, user_email=current_user.email_address)
+            inserted = database_service.upsert_email_source(
+                req=req, user_email=current_user.email_address
+            )
             if inserted is None:
-                raise HTTPException(status_code=400, detail="Failed to insert email source") 
-            print(f"No existing summary request for msg_id {inserted.id}. Creating new request.", flush=True)
-            dify_req = DataInsertSummaryRequest(**inserted.model_dump(), sender=req.sender, current_user=current_user)
-            database_service.upsert_status(source_email_id=inserted.id, status=Status.processing.value)            
+                raise HTTPException(
+                    status_code=400, detail="Failed to insert email source"
+                )
+            print(
+                f"No existing summary request for msg_id {inserted.id}. Creating new request.",
+                flush=True,
+            )
+            dify_req = DataInsertSummaryRequest(
+                **inserted.model_dump(), sender=req.sender, current_user=current_user
+            )
+            database_service.upsert_status(
+                source_email_id=inserted.id, status=Status.processing.value
+            )
             background_tasks.add_task(dify_service.send_to_summary, dify_req)
-        
-        return 
+
+        return
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/summary_batch", status_code=status.HTTP_202_ACCEPTED)
+async def set_summary_batch(
+    req: DifySummaryBatchRequest,
+    current_user: UserRequest = Depends(get_current_user),
+    database_service: DatabaseService = Depends(get_database_service),
+    email_service: EmailService = Depends(get_email_service),
+):
+    try:
+        queued_count = 0
+        for id in req.ids:
+            source_email = database_service.get_source_email(
+                id, current_user.email_address
+            )
+            res = email_service.get_message_by_id(
+                id, MessageParam(format="full"), current_user
+            )
+            if res is None:
+                raise HTTPException(status_code=404, detail=f"Message {id} not found")
+            if res.payload is None:
+                raise HTTPException(
+                    status_code=404, detail=f"Payload for message {id} not found"
+                )
+            if res.payload.headers is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Headers for message {id} not found",
+                )
+            if source_email:
+                status_val = source_email.status
+
+                if status_val in [Status.done.value, Status.processing.value]:
+                    continue
+                else:
+                    database_service.upsert_status(
+                        source_email.id, Status.processing.value
+                    )
+
+                    temp = source_email.model_dump()
+
+                    dify_req = DataInsertSummaryRequest(
+                        **temp,
+                        current_user=current_user,
+                        sender=get_email_header(res.payload.headers, "From"),
+                    )
+
+                    queued_count += 1
+
+            # else:
+            #     if res.labelIds is None:
+            #         raise HTTPException(
+            #             status_code=404, detail=f"LabelIds for message {id} not found"
+            #         )
+            #     if res.text_plain is None:
+            #         raise HTTPException(
+            #             status_code=404,
+            #             detail=f"Text plain for message {id} not found",
+            #         )
+            #     dify_req = DifySummaryRequest(
+            #         msg_id=id,
+            #         email_tags=res.labelIds,
+            #         sender=get_email_header(res.payload.headers, "From"),
+            #         plain_text=res.text_plain,
+            #     )
+            #     inserted = database_service.upsert_email_source(
+            #         req=dify_req, user_email=current_user.email_address
+            #     )
+
+            #     if not inserted:
+            #         print(f"Failed to insert email {id}. Skipping.", flush=True)
+            #         continue
+
+            #     database_service.upsert_status(inserted.id, Status.processing.value)
+
+            #     dify_req = DataInsertSummaryRequest(
+            #         **inserted.model_dump(),
+            #         sender=get_email_header(res.payload.headers, "From"),
+            #         current_user=current_user,
+            #     )
+            queued_count += 1
+        return
+    except Exception as e:
+        return HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/overview")
 async def get_overview(
     current_user: UserRequest = Depends(get_current_user),
     database_service: DatabaseService = Depends(get_database_service),
-    dify_service: DifyService = Depends(get_dify_service)
+    dify_service: DifyService = Depends(get_dify_service),
 ):
     try:
         res = None
@@ -111,7 +220,7 @@ async def get_overview(
         data = database_service.get_overview(current_user.email_address)
         if data is None:
             return HTTPException(status_code=404, detail="No overview data found")
-        
+
         res = dify_service.send_to_overview(data)
         if res is None:
             return HTTPException(status_code=404, detail="Overview request failed")

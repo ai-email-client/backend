@@ -70,3 +70,8 @@ class Message(BaseModel):
 class Sender(BaseModel):
     name: Optional[str] = None
     type: Optional[str] = None
+
+
+class Draft(BaseModel):
+    id: str
+    message: Message

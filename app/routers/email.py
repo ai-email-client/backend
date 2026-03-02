@@ -48,21 +48,9 @@ async def fetch_emails(
     try:
         msgs = email_service.fetch_emails(param, current_user)
 
-        messages = email_service.get_message_batch(
-            msgs=msgs.messages,
-            param=MessageParam(
-                format="metadata", metadataHeaders=["Date", "From", "Subject", "To"]
-            ),
-            current_user=current_user,
-        )
+        res = email_service.get_message_batch(msgs=msgs, current_user=current_user)
 
-        response = MessagesResponse(
-            messages=messages,
-            nextPageToken=msgs.nextPageToken,
-            resultSizeEstimate=msgs.resultSizeEstimate,
-        )
-
-        return response
+        return res
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 
@@ -76,8 +64,7 @@ async def get_message_by_id(
 ):
     try:
         res = email_service.get_message_by_id(msg_id, param, current_user)
-        response = Message(**res)
-        return response
+        return res
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 
@@ -89,8 +76,7 @@ async def get_labels(
 ):
     try:
         res = email_service.get_labels(current_user)
-        response = CategoryListResponse(**res)
-        return response
+        return res
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 
@@ -129,8 +115,7 @@ async def sync_labels(
 ):
     try:
         res = email_service.sync_labels(current_user)
-        response = CategoryListResponse(**res)
-        return response
+        return res
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 
@@ -143,8 +128,7 @@ async def get_label_by_id(
 ):
     try:
         res = email_service.get_label_by_id(label_id, current_user)
-        response = Category(**res)
-        return response
+        return res
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 
@@ -275,6 +259,33 @@ async def get_drafts(
 ):
     try:
         res = email_service.get_drafts(params, current_user)
+        return res
+    except Exception as e:
+        return HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/draft/{draft_id}")
+async def update_draft(
+    draft_id: str,
+    req: CreateDraftRequest,
+    current_user: UserRequest = Depends(get_current_user),
+    email_service: EmailService = Depends(get_email_service),
+):
+    try:
+        res = email_service.update_draft(draft_id, req, current_user)
+        return res
+    except Exception as e:
+        return HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/draft/{draft_id}/send")
+async def send_draft(
+    draft_id: str,
+    current_user: UserRequest = Depends(get_current_user),
+    email_service: EmailService = Depends(get_email_service),
+):
+    try:
+        res = email_service.send_draft(draft_id, current_user)
         return res
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))

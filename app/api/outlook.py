@@ -131,3 +131,15 @@ class OutlookAPI:
         self, params: DraftsQueryParams, current_user: UserRequest, db: SupabaseDB
     ):
         pass
+
+    def update_draft(
+        self,
+        draft_id: str,
+        req: CreateDraftRequest,
+        current_user: UserRequest,
+        db: SupabaseDB,
+    ):
+        pass
+
+    def send_draft(self, draft_id: str, current_user: UserRequest, db: SupabaseDB):
+        pass

@@ -1,6 +1,8 @@
 from typing import List
 from app import utility
-from app.schemas.email import Format, Message
+from app.schemas.category import Category
+from app.schemas.email import Draft, Format, Message
+from app.schemas.response import CategoryListResponse, MessagesResponse
 from config import Config
 from database import SupabaseDB
 from fastapi import HTTPException
@@ -52,8 +54,7 @@ class EmailService:
 
     def get_message_batch(
         self,
-        msgs: List[Message],
-        param: MessageParam,
+        msgs: MessagesResponse,
         current_user: UserRequest,
     ):
         if current_user.provider == "gmail":
@@ -62,11 +63,20 @@ class EmailService:
             provider_service = OutlookAPI(self.config)
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
-
-        res = provider_service.get_message_batch(msgs, param, current_user, self.db)
+        param = MessageParam(
+            format="metadata", metadataHeaders=["Date", "From", "Subject", "To"]
+        )
+        res = provider_service.get_message_batch(
+            msgs.messages, param, current_user, self.db
+        )
         if res is None:
             raise HTTPException(status_code=404, detail=f"Messages not found")
-        return res
+
+        return MessagesResponse(
+            messages=res,
+            nextPageToken=msgs.nextPageToken,
+            resultSizeEstimate=msgs.resultSizeEstimate,
+        )
 
     def get_message_by_id(
         self, msg_id: str, param: MessageParam, current_user: UserRequest
@@ -102,11 +112,12 @@ class EmailService:
             )
         else:
             text_plain = utility.decode_base64(body_plain["body"]["data"])
+            text_plain = utility.clean_text(text_plain)
 
         res["text_plain"] = text_plain
         res["text_html"] = text_html
 
-        return res
+        return Message(**res)
 
     def get_labels(self, current_user: UserRequest):
         if current_user.provider == "gmail":
@@ -120,7 +131,7 @@ class EmailService:
         if res is None:
             raise HTTPException(status_code=404, detail="Labels not found")
 
-        return res
+        return CategoryListResponse(**res)
 
     def get_attachments(
         self, msg_id: str, attachment_id: str, current_user: UserRequest
@@ -161,7 +172,7 @@ class EmailService:
         res = provider_service.sync_labels(current_user, self.db)
         if res is None:
             raise HTTPException(status_code=404, detail="Labels sync failed")
-        return res
+        return CategoryListResponse(**res)
 
     def get_label_by_id(self, label_id: str, current_user: UserRequest):
         if current_user.provider == "gmail":
@@ -175,7 +186,7 @@ class EmailService:
         if res is None:
             raise HTTPException(status_code=404, detail="Label not found")
 
-        return res
+        return Category(**res)
 
     def get_label_by_name(self, label_name: str, current_user: UserRequest):
         if current_user.provider == "gmail":
@@ -302,7 +313,7 @@ class EmailService:
         if res is None:
             raise HTTPException(status_code=400, detail=f"Error creating draft :{res}")
 
-        return res
+        return Draft(**res)
 
     def delete_draft(self, draft_id: str, current_user: UserRequest):
         if current_user.provider == "gmail":
@@ -313,7 +324,6 @@ class EmailService:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
         res = provider_service.delete_draft(draft_id, current_user, self.db)
-        print(res)
 
         return res
 
@@ -346,5 +356,32 @@ class EmailService:
     def draft_send(self):
         pass
 
-    def draft_update(self):
-        pass
+    def update_draft(
+        self, draft_id: str, req: CreateDraftRequest, current_user: UserRequest
+    ):
+        if current_user.provider == "gmail":
+            provider_service = GmailAPI(self.config)
+        elif current_user.provider == "outlook":
+            provider_service = OutlookAPI(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+
+        res = provider_service.update_draft(draft_id, req, current_user, self.db)
+        if res is None:
+            raise HTTPException(status_code=400, detail=f"Error updating draft :{res}")
+
+        return Draft(**res)
+
+    def send_draft(self, draft_id: str, current_user: UserRequest):
+        if current_user.provider == "gmail":
+            provider_service = GmailAPI(self.config)
+        elif current_user.provider == "outlook":
+            provider_service = OutlookAPI(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+
+        res = provider_service.send_draft(draft_id, current_user, self.db)
+        if res is None:
+            raise HTTPException(status_code=400, detail=f"Error sending draft :{res}")
+
+        return Message(**res)

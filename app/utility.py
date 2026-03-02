@@ -8,9 +8,11 @@ import jwt
 import email
 import json
 from email.policy import default
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from bs4 import BeautifulSoup
 from fastapi import HTTPException
+
+from app.schemas.email import Header
 
 
 def decode_base64(data: str) -> str:
@@ -27,7 +29,6 @@ def raw_to_json(raw_string: str):
     msg_bytes = base64.urlsafe_b64decode(raw_string)
 
     msg = email.message_from_bytes(msg_bytes, policy=default)
-    print(msg_bytes)
 
     email_data = {
         "headers": {
@@ -55,21 +56,35 @@ def raw_to_json(raw_string: str):
                 charset = part.get_content_charset("utf-8")
 
                 if content_type == "text/plain" and not email_data["body"]["text"]:
-                    email_data["body"]["text"] = part.get_payload(decode=True).decode(
-                        charset, errors="ignore"
-                    )
+                    payload = part.get_payload(decode=True)
+                    if isinstance(payload, bytes):
+                        email_data["body"]["text"] = payload.decode(
+                            charset or "utf-8", errors="ignore"
+                        )
+                    elif isinstance(payload, str):
+                        email_data["body"]["text"] = payload
 
                 elif content_type == "text/html" and not email_data["body"]["html"]:
-                    email_data["body"]["html"] = part.get_payload(decode=True).decode(
-                        charset, errors="ignore"
-                    )
+                    payload = part.get_payload(decode=True)
+                    if isinstance(payload, bytes):
+                        email_data["body"]["html"] = payload.decode(
+                            charset or "utf-8", errors="ignore"
+                        )
+                    elif isinstance(payload, str):
+                        email_data["body"]["html"] = payload
             except Exception as e:
                 print(f"Error decoding part: {e}")
 
     else:
         content_type = msg.get_content_type()
         charset = msg.get_content_charset("utf-8")
-        payload = msg.get_payload(decode=True).decode(charset, errors="ignore")
+        payload = msg.get_payload(decode=True)
+        if isinstance(payload, bytes):
+            email_data["body"]["text"] = payload.decode(
+                charset or "utf-8", errors="ignore"
+            )
+        elif isinstance(payload, str):
+            email_data["body"]["text"] = payload
 
         if content_type == "text/plain":
             email_data["body"]["text"] = payload
@@ -103,10 +118,9 @@ def clean_text(text: str) -> str:
         return ""
 
     text = unicodedata.normalize("NFKC", text)
+    text = re.sub(r"<[^>]+>", "", text, flags=re.DOTALL)
 
-    # 3. ลบลิงก์ URL เพื่อประหยัด Token ของ AI
     text = re.sub(r"\[https?://[^\]]+\]", "", text)
-    text = re.sub(r"<https?://[^>]+>", "", text)
     text = re.sub(r"https?://\S+", "", text)
 
     invisible_chars = (
@@ -114,16 +128,38 @@ def clean_text(text: str) -> str:
     )
     text = re.sub(invisible_chars, "", text)
     text = text.replace("\ufffd", "")
+    text = text.replace("\r", "")
 
-    text = re.sub(r"[-_=*+~#]{4,}", "---", text)
+    text = re.sub(r"[-_=*+~#]{2,}", "", text)
 
     text = re.sub(r"[\t\xa0]", " ", text)
-    text = text.replace("\r", "")
     text = re.sub(r" +", " ", text)
 
-    lines = [line.strip() for line in text.split("\n")]
-    text = "\n".join(lines)
-    text = re.sub(r"\n{3,}", "\n\n", text)
+    footer_markers = [
+        "follow us:",
+        "to unsubscribe",
+        "unsubscribe from this newsletter",
+        "terms of use:",
+        "privacy policy:",
+        "view web version",
+        "you're receiving this e-mail because",
+        "this email message was auto-generated",
+        "cheers,",
+        "© valve corporation",
+    ]
+
+    text_lower = text.lower()
+    cutoff_index = len(text)
+
+    for marker in footer_markers:
+        idx = text_lower.find(marker)
+        if idx != -1 and idx < cutoff_index:
+            cutoff_index = idx
+
+    text = text[:cutoff_index]
+
+    lines = [line.strip() for line in text.split("\n") if line.strip()]
+    text = "\n\n".join(lines)
 
     return text.strip()
 
@@ -134,11 +170,10 @@ def convert_timestamp_to_date(timestamp: int) -> str:
     )
 
 
-def get_email_header(payload: Dict[str, Any], header_name: str) -> str:
-    if "headers" in payload:
-        for header in payload["headers"]:
-            if header["name"] == header_name:
-                return header["value"]
+def get_email_header(headers: List[Header], header_name: str) -> str:
+    for header in headers:
+        if header.name == header_name:
+            return header.value
     return ""
 
 
