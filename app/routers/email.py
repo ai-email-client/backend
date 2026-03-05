@@ -1,4 +1,6 @@
+import ast
 from fastapi import APIRouter, HTTPException, Depends
+from app.api.gmail import google_api_errors
 from app.schemas.category import Category
 from app.schemas.email import Format, Message
 from app.schemas.response import CategoryListResponse, MessagesResponse
@@ -36,7 +38,8 @@ async def initialize_labels(
         res = email_service.initialize_labels(current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.get("/messages")
@@ -52,7 +55,8 @@ async def fetch_emails(
 
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.get("/message/{msg_id}")
@@ -66,7 +70,8 @@ async def get_message_by_id(
         res = email_service.get_message_by_id(msg_id, param, current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.get("/labels")
@@ -78,21 +83,23 @@ async def get_labels(
         res = email_service.get_labels(current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
-@router.get("/message/{msg_id}/attachments/{attachment_id}")
-async def get_attachments(
+@router.get("/message/{msg_id}/attachment/{attachment_id}")
+async def get_attachment(
     msg_id: str,
     attachment_id: str,
     current_user: UserRequest = Depends(get_current_user),
     email_service: EmailService = Depends(get_email_service),
 ):
     try:
-        res = email_service.get_attachments(msg_id, attachment_id, current_user)
+        res = email_service.get_attachment(msg_id, attachment_id, current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.post("/label/create")
@@ -105,7 +112,8 @@ async def create_label(
         res = email_service.create_label(req, current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.get("/labels/sync")
@@ -117,7 +125,8 @@ async def sync_labels(
         res = email_service.sync_labels(current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.get("/label/{label_id}")
@@ -130,7 +139,8 @@ async def get_label_by_id(
         res = email_service.get_label_by_id(label_id, current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.post("/message/modify")
@@ -143,7 +153,8 @@ async def modify_label(
         res = email_service.message_modify_label(req, current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.post("/message/batch_modify")
@@ -156,7 +167,8 @@ async def batch_modify_label(
         res = email_service.message_batch_modify_label(req, current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.delete("/message/{msg_id}")
@@ -169,7 +181,8 @@ async def delete_message(
         res = email_service.message_delete(msg_id, current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.post("/message/batch_delete")
@@ -181,8 +194,8 @@ async def batch_delete_message(
     try:
         res = email_service.message_batch_delete(req, current_user)
         return res
-    except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+    except google_api_errors.HttpError as e:
+        return HTTPException(status_code=e.resp.status, detail=e.resp.reason)
 
 
 @router.put("/message/trash/{msg_id}")
@@ -195,7 +208,8 @@ async def trash_message(
         email_service.message_trash(msg_id, current_user)
         return HTTPException(status_code=200, detail="Message trashed successfully")
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.put("/message/untrash/{msg_id}")
@@ -208,7 +222,8 @@ async def untrash_message(
         email_service.message_untrash(msg_id, current_user)
         return HTTPException(status_code=200, detail="Message untrashed successfully")
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.post("/draft/create")
@@ -221,7 +236,8 @@ async def create_draft(
         res = email_service.create_draft(req, current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.delete("/draft/{draft_id}")
@@ -234,7 +250,8 @@ async def delete_draft(
         email_service.delete_draft(draft_id, current_user)
         return HTTPException(status_code=200, detail="Draft deleted successfully")
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.get("/draft/{draft_id}")
@@ -248,7 +265,8 @@ async def get_draft(
         res = email_service.get_draft(draft_id, current_user, params.format)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.get("/drafts")
@@ -261,7 +279,8 @@ async def get_drafts(
         res = email_service.get_drafts(params, current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.put("/draft/{draft_id}")
@@ -275,7 +294,8 @@ async def update_draft(
         res = email_service.update_draft(draft_id, req, current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
 @router.post("/draft/{draft_id}/send")
@@ -288,4 +308,5 @@ async def send_draft(
         res = email_service.send_draft(draft_id, current_user)
         return res
     except Exception as e:
-        return HTTPException(status_code=500, detail=str(e))
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))

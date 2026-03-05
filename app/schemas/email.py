@@ -10,6 +10,11 @@ class Format(str, Enum):
     METADATA = "metadata"
 
 
+class Header(BaseModel):
+    name: str
+    value: str
+
+
 class MessageResponse(BaseModel):
     id: str
     threadId: str
@@ -20,6 +25,13 @@ class Attachment(BaseModel):
     mimeType: str
     size: int
     attachmentId: Optional[str] = None
+    headers: Optional[List[Header]] = None
+    data: Optional[str] = None
+
+
+class AttachmentData(BaseModel):
+    size: int
+    data: str
 
 
 class ClassificationLabelFieldValue(BaseModel):
@@ -30,11 +42,6 @@ class ClassificationLabelFieldValue(BaseModel):
 class ClassificationLabelValue(BaseModel):
     labelId: str
     fields: List[ClassificationLabelFieldValue]
-
-
-class Header(BaseModel):
-    name: str
-    value: str
 
 
 class MessagePartBody(BaseModel):
@@ -60,11 +67,12 @@ class Message(BaseModel):
     historyId: Optional[str] = None
     internalDate: Optional[str] = None
     payload: Optional["MessagePart"] = None
+    attachments: Optional[List["Attachment"]] = None
     text_plain: Optional[str] = None
     text_html: Optional[str] = None
     sizeEstimate: Optional[int] = None
     raw: Optional[str] = None
-    classificationLabelValues: Optional[List["ClassificationLabelValue"]] = None
+    classificationLabelValues: Optional[List[ClassificationLabelValue]] = None
 
 
 class Sender(BaseModel):

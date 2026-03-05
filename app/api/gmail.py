@@ -1,4 +1,5 @@
 from typing import List, Dict, Any
+from fastapi import HTTPException
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -9,6 +10,8 @@ from email.message import EmailMessage
 
 import logging
 import base64
+
+from pyparsing import results
 
 
 from app.schemas.email import Format, Message
@@ -84,8 +87,8 @@ class GmailAPI:
                 scopes=creds.get("scopes"),
             )
             return build("gmail", "v1", credentials=creds)
-        except Exception as e:
-            raise e
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def get_user_email(self, credentials):
         service = self.build_service(credentials)
@@ -179,8 +182,8 @@ class GmailAPI:
                 return self.get_stored_credentials(
                     user_info.get("emailAddress", ""), db
                 )
-        except Exception as e:
-            raise e
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def get_stored_credentials(self, email_address: str, db: SupabaseDB):
         """Retrieved stored credentials for the provided user ID.
@@ -201,8 +204,8 @@ class GmailAPI:
                 return res[0]["credentials"]
             return None
 
-        except Exception as e:
-            print(f"Error: {e}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def store_credentials(
         self, email_address: str, credentials: Credentials, db: SupabaseDB
@@ -229,8 +232,8 @@ class GmailAPI:
                 "email_address",
             )
             return res[0]["credentials"]
-        except Exception as e:
-            print(f"Error: {e}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def initialize_labels(self, current_user: UserRequest, db: SupabaseDB):
         try:
@@ -241,8 +244,8 @@ class GmailAPI:
                 service.users().labels().create(userId="me", body=label).execute()
 
             return {"message": "Labels initialized successfully"}
-        except Exception as e:
-            raise Exception(f"Error function initialize_labels: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def fetch_emails(
         self, param: MessagesParam, current_user: UserRequest, db: SupabaseDB
@@ -267,8 +270,8 @@ class GmailAPI:
 
             return MessagesResponse(**results)
 
-        except Exception as e:
-            raise Exception(f"Error function fetch_emails: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def get_message_batch(
         self,
@@ -304,10 +307,41 @@ class GmailAPI:
                 batch.add(req, callback=callback)
 
             batch.execute()
+            for msg in results:
+                attachments = utility.get_attachments(msg["payload"])
+                if attachments is not None:
+                    msg["attachments"] = attachments
+
+                body_html = utility.get_part_by_mimetype(msg["payload"], "text/html")
+                body_plain = utility.get_part_by_mimetype(msg["payload"], "text/plain")
+
+                if body_html is None:
+                    text_html = ""
+                else:
+                    text_html = utility.decode_base64(body_html["body"]["data"])
+
+                if body_plain is None:
+                    body_plain = utility.get_part_by_mimetype(
+                        msg["payload"], "text/html"
+                    )
+                    if body_plain is None:
+                        raise HTTPException(
+                            status_code=404,
+                            detail="Message text or html body not found",
+                        )
+                    text_plain = utility.clean_html(
+                        utility.decode_base64(body_plain["body"]["data"])
+                    )
+                else:
+                    text_plain = utility.decode_base64(body_plain["body"]["data"])
+                    text_plain = utility.clean_text(text_plain)
+
+                msg["text_plain"] = text_plain
+                msg["text_html"] = text_html
             return results
 
-        except Exception as e:
-            raise Exception(f"Error function get_message_batch: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def get_message_by_id(
         self,
@@ -334,8 +368,8 @@ class GmailAPI:
 
             return result
 
-        except Exception as e:
-            raise Exception(f"Error function get_message_by_id: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def get_labels(self, current_user: UserRequest, db: SupabaseDB):
         try:
@@ -344,10 +378,10 @@ class GmailAPI:
             results = service.users().labels().list(userId="me").execute()
 
             return results
-        except Exception as e:
-            raise Exception(f"Error function get_labels: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
-    def get_attachments(
+    def get_attachment(
         self, msg_id: str, attachment_id: str, current_user: UserRequest, db: SupabaseDB
     ):
         try:
@@ -361,8 +395,8 @@ class GmailAPI:
                 .execute()
             )
             return results
-        except Exception as e:
-            raise Exception(f"Error function get_attachments: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def get_label_by_id(self, label_id: str, current_user: UserRequest, db: SupabaseDB):
         try:
@@ -370,8 +404,8 @@ class GmailAPI:
             service = self.build_service(credentials)
             results = service.users().labels().get(userId="me", id=label_id).execute()
             return results
-        except Exception as e:
-            raise Exception(f"Error function get_label_by_id: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def get_label_by_name(
         self, label_name: str, current_user: UserRequest, db: SupabaseDB
@@ -385,8 +419,8 @@ class GmailAPI:
                 if label.get("name").lower() == label_name.lower():
                     return Category(**label)
             return None
-        except Exception as e:
-            raise Exception(f"Error function get_label_by_name: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def create_label(
         self, req: CreateLabelRequest, current_user: UserRequest, db: SupabaseDB
@@ -407,8 +441,8 @@ class GmailAPI:
             service = self.build_service(credentials)
             results = service.users().labels().create(userId="me", body=body).execute()
             return results
-        except Exception as e:
-            raise Exception(f"Error function create_label: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def sync_labels(self, current_user: UserRequest, db: SupabaseDB):
         try:
@@ -437,19 +471,7 @@ class GmailAPI:
             labels["labels"].extend(results)
             return labels
         except google_api_errors.HttpError as e:
-            if e.resp.status == 429:
-                raise Exception("Rate limit exceeded. Please try again later.")
-            if e.resp.status == 401:
-                raise Exception("Unauthorized. Please try again later.")
-            if e.resp.status == 404:
-                raise Exception("Resource not found. Please try again later.")
-            if e.resp.status == 409:
-                raise Exception("Conflict error. Please try again later.")
-            if e.resp.status >= 400 and e.resp.status < 500:
-                raise Exception("Bad request. Please try again later.")
-            if e.resp.status >= 500:
-                raise Exception("Google server error. Please try again later.")
-            raise Exception(f"Error function sync_labels: {str(e)}")
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def message_modify_label(
         self, req: MessageModifyLabelRequest, current_user: UserRequest, db: SupabaseDB
@@ -468,8 +490,8 @@ class GmailAPI:
                 .execute()
             )
             return results
-        except Exception as e:
-            raise Exception(f"Error function modify_label: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def message_batch_modify_label(
         self,
@@ -489,8 +511,8 @@ class GmailAPI:
                 service.users().messages().batchModify(userId="me", body=body).execute()
             )
             return results
-        except Exception as e:
-            raise Exception(f"Error function message_batch_modify_label: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def message_delete(self, msg_id: str, current_user: UserRequest, db: SupabaseDB):
         try:
@@ -500,8 +522,8 @@ class GmailAPI:
                 service.users().messages().delete(userId="me", id=msg_id).execute()
             )
             return results
-        except Exception as e:
-            raise Exception(f"Error function message_delete: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def message_batch_delete(
         self, req: MessageBatchDeleteRequest, current_user: UserRequest, db: SupabaseDB
@@ -516,8 +538,8 @@ class GmailAPI:
                 service.users().messages().batchDelete(userId="me", body=body).execute()
             )
             return results
-        except Exception as e:
-            raise Exception(f"Error function message_batch_delete: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def message_trash(self, msg_id: str, current_user: UserRequest, db: SupabaseDB):
         try:
@@ -525,8 +547,8 @@ class GmailAPI:
             service = self.build_service(credentials)
             results = service.users().messages().trash(userId="me", id=msg_id).execute()
             return results
-        except Exception as e:
-            raise Exception(f"Error function message_trash: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def message_untrash(self, msg_id: str, current_user: UserRequest, db: SupabaseDB):
         try:
@@ -536,8 +558,8 @@ class GmailAPI:
                 service.users().messages().untrash(userId="me", id=msg_id).execute()
             )
             return results
-        except Exception as e:
-            raise Exception(f"Error function message_untrash: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def create_draft(
         self,
@@ -567,8 +589,8 @@ class GmailAPI:
                 .execute()
             )
             return results
-        except Exception as e:
-            raise Exception(f"Error function create_draft: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def delete_draft(self, draft_id: str, current_user: UserRequest, db: SupabaseDB):
         try:
@@ -579,8 +601,8 @@ class GmailAPI:
                 service.users().drafts().delete(userId="me", id=draft_id).execute()
             )
             return results
-        except Exception as e:
-            raise Exception(f"Error function delete_draft: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def get_draft(
         self, draft_id: str, current_user: UserRequest, db: SupabaseDB, format: str
@@ -596,8 +618,8 @@ class GmailAPI:
                 .execute()
             )
             return results
-        except Exception as e:
-            raise Exception(f"Error function get_draft: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def get_drafts(
         self, params: DraftsQueryParams, current_user: UserRequest, db: SupabaseDB
@@ -620,8 +642,8 @@ class GmailAPI:
             )
 
             return results
-        except Exception as e:
-            raise Exception(f"Error function get_drafts: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def update_draft(
         self,
@@ -652,8 +674,8 @@ class GmailAPI:
                 .execute()
             )
             return results
-        except Exception as e:
-            raise Exception(f"Error function update_draft: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def send_draft(self, draft_id: str, current_user: UserRequest, db: SupabaseDB):
         try:
@@ -664,5 +686,5 @@ class GmailAPI:
 
             results = service.users().drafts().send(userId="me", body=draft).execute()
             return results
-        except Exception as e:
-            raise Exception(f"Error function send_draft: {str(e)}")
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())

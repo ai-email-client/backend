@@ -66,7 +66,7 @@ class OutlookAPI:
     def get_user_profile(self, current_user: UserRequest, db: SupabaseDB):
         pass
 
-    def get_attachments(
+    def get_attachment(
         self, msg_id: str, attachment_id: str, current_user: UserRequest, db: SupabaseDB
     ):
         pass

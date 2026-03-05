@@ -206,6 +206,7 @@ def get_attachments(payload: Dict[str, Any]):
                     "mimeType": part.get("mimeType", ""),
                     "size": part.get("body", {}).get("size", 0),
                     "attachmentId": part.get("body", {}).get("attachmentId", ""),
+                    "headers": part.get("headers", []),
                 }
             )
 

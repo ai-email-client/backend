@@ -1,7 +1,7 @@
 from typing import List
 from app import utility
 from app.schemas.category import Category
-from app.schemas.email import Draft, Format, Message
+from app.schemas.email import Attachment, AttachmentData, Draft, Format, Message
 from app.schemas.response import CategoryListResponse, MessagesResponse
 from config import Config
 from database import SupabaseDB
@@ -64,7 +64,8 @@ class EmailService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         param = MessageParam(
-            format="metadata", metadataHeaders=["Date", "From", "Subject", "To"]
+            # format="metadata", metadataHeaders=["Date", "From", "Subject", "To"]
+            format="full"
         )
         res = provider_service.get_message_batch(
             msgs.messages, param, current_user, self.db
@@ -93,6 +94,10 @@ class EmailService:
             raise HTTPException(
                 status_code=404, detail=f"Message with id {msg_id} not found"
             )
+        attachments = utility.get_attachments(res["payload"])
+        if attachments is not None:
+            res["attachments"] = attachments
+
         body_html = utility.get_part_by_mimetype(res["payload"], "text/html")
         body_plain = utility.get_part_by_mimetype(res["payload"], "text/plain")
 
@@ -133,7 +138,7 @@ class EmailService:
 
         return CategoryListResponse(**res)
 
-    def get_attachments(
+    def get_attachment(
         self, msg_id: str, attachment_id: str, current_user: UserRequest
     ):
         if current_user.provider == "gmail":
@@ -143,11 +148,13 @@ class EmailService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
-        res = provider_service.get_attachments(
+        res = provider_service.get_attachment(
             msg_id, attachment_id, current_user, self.db
         )
+        if res is None:
+            raise HTTPException(status_code=404, detail="Attachment not found")
 
-        return res
+        return AttachmentData(**res)
 
     def create_label(self, req: CreateLabelRequest, current_user: UserRequest):
         if current_user.provider == "gmail":
@@ -284,7 +291,11 @@ class EmailService:
         return res
 
     def update_message_labels(
-        self, msg_id: str, label_id: str, current_user: UserRequest
+        self,
+        msg_id: str,
+        current_user: UserRequest,
+        addLabelIds: List[str] = [],
+        removeLabelIds: List[str] = [],
     ):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
@@ -294,7 +305,7 @@ class EmailService:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
         req = MessageModifyLabelRequest(
-            id=msg_id, addLabelIds=[label_id], removeLabelIds=[]
+            id=msg_id, addLabelIds=addLabelIds, removeLabelIds=removeLabelIds
         )
         provider_service.message_modify_label(req, current_user, self.db)
 
