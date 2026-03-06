@@ -25,7 +25,7 @@ class Attachment(BaseModel):
     mimeType: str
     size: int
     attachmentId: Optional[str] = None
-    headers: Optional[List[Header]] = None
+    headers: Optional[List[Header]] = []
     data: Optional[str] = None
 
 
@@ -54,9 +54,9 @@ class MessagePart(BaseModel):
     partId: Optional[str] = None
     mimeType: Optional[str] = None
     filename: Optional[str] = None
-    headers: Optional[List[Header]] = None
+    headers: Optional[List[Header]] = []
     body: Optional["MessagePartBody"] = None
-    parts: Optional[List["MessagePart"]] = None
+    parts: Optional[List["MessagePart"]] = []
 
 
 class Message(BaseModel):
@@ -82,4 +82,4 @@ class Sender(BaseModel):
 
 class Draft(BaseModel):
     id: str
-    message: Message
+    message: "Message"

@@ -298,6 +298,21 @@ async def update_draft(
         return HTTPException(status_code=int(error[0]), detail=str(error[1]))
 
 
+@router.put("/draft/upload/{draft_id}")
+async def upload_draft(
+    draft_id: str,
+    req: CreateDraftRequest,
+    current_user: UserRequest = Depends(get_current_user),
+    email_service: EmailService = Depends(get_email_service),
+):
+    try:
+        res = email_service.upload_draft(draft_id, req, current_user)
+        return res
+    except Exception as e:
+        error = str(e).split(": ", 1)
+        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+
+
 @router.post("/draft/{draft_id}/send")
 async def send_draft(
     draft_id: str,

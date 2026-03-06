@@ -1,4 +1,5 @@
 from typing import List, Dict, Any
+from unittest import result
 from fastapi import HTTPException
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
@@ -14,7 +15,7 @@ import base64
 from pyparsing import results
 
 
-from app.schemas.email import Format, Message
+from app.schemas.email import Draft, Format, Message,Attachment
 from config import Config
 from app import utility
 from database import SupabaseDB
@@ -33,6 +34,7 @@ from app.schemas.request import (
 
 from app.schemas.response import (
     CredentialResponse,
+    DraftsResposnse,
     EmailDetailResponse,
     EmailShortResponse,
     EmailFetchResponse,
@@ -309,9 +311,9 @@ class GmailAPI:
             batch.execute()
             for msg in results:
                 attachments = utility.get_attachments(msg["payload"])
-                if attachments is not None:
+                if len(attachments) > 0:
                     msg["attachments"] = attachments
-
+                        
                 body_html = utility.get_part_by_mimetype(msg["payload"], "text/html")
                 body_plain = utility.get_part_by_mimetype(msg["payload"], "text/plain")
 
@@ -338,6 +340,7 @@ class GmailAPI:
 
                 msg["text_plain"] = text_plain
                 msg["text_html"] = text_html
+
             return results
 
         except google_api_errors.HttpError as e:
@@ -570,13 +573,12 @@ class GmailAPI:
         try:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
-
             message = EmailMessage()
 
-            message["To"] = req.To
+            message["To"] = req.to
             message["From"] = current_user.email_address
-            message["Subject"] = req.Subject
-            message.set_content(req.Content)
+            message["Subject"] = req.subject
+            message.set_content(req.message)
 
             encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
 
@@ -627,8 +629,9 @@ class GmailAPI:
         try:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
+            results = []
 
-            results = (
+            msgs = (
                 service.users()
                 .drafts()
                 .list(
@@ -640,12 +643,80 @@ class GmailAPI:
                 )
                 .execute()
             )
+            if "drafts" not in msgs:
+                return DraftsResposnse(drafts=[])
+            drafts = DraftsResposnse(**msgs).drafts
 
-            return results
+            for draft in drafts:
+                req = (
+                    service.users()
+                    .messages()
+                    .get(userId="me", id=draft.message.id, format="full")
+                ).execute()
+                attachments = utility.get_attachments(req["payload"])
+                if attachments is not None:
+                    req["attachments"] = attachments
+
+                results.append(Draft(id=draft.id, message=Message(**req)))
+
+            return DraftsResposnse(drafts=results)
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def update_draft(
+        self,
+        draft_id: str,
+        req: CreateDraftRequest,
+        current_user: UserRequest,
+        db: SupabaseDB,
+    ):
+        try:
+                credentials = self.get_stored_credentials(current_user.email_address, db)
+                service = self.build_service(credentials)
+                                
+                message = EmailMessage()
+                message["To"] = req.to
+                message["From"] = current_user.email_address
+                message["Subject"] = req.subject
+                message.set_content(req.message)
+                if req.attachments:
+                    for att in req.attachments:
+                        if att.data:
+                            file_data = base64.b64decode(att.data)
+                            
+                            if '/' in att.mimeType:
+                                m_type, s_type = att.mimeType.split('/', 1)
+                            else:
+                                m_type, s_type = 'application', 'octet-stream'
+
+                            message.add_attachment(
+                                file_data,
+                                maintype=m_type,
+                                subtype=s_type,
+                                filename=att.filename
+                            )
+
+                raw_bytes = message.as_bytes()
+                encoded_message = base64.urlsafe_b64encode(raw_bytes).decode('utf-8')
+                
+                update_body = {
+                    "message": {
+                        "raw": encoded_message
+                    }
+                }
+
+                results = (
+                    service.users()
+                    .drafts()
+                    .update(userId="me", id=draft_id, body=update_body)
+                    .execute()
+                )
+                
+                return results
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
+
+    def upload_draft(
         self,
         draft_id: str,
         req: CreateDraftRequest,
@@ -658,10 +729,10 @@ class GmailAPI:
 
             message = EmailMessage()
 
-            message["To"] = req.To
+            message["To"] = req.to
             message["From"] = current_user.email_address
-            message["Subject"] = req.Subject
-            message.set_content(req.Content)
+            message["Subject"] = req.subject
+            message.set_content(req.message)
 
             encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
 
@@ -670,7 +741,7 @@ class GmailAPI:
             results = (
                 service.users()
                 .drafts()
-                .update(userId="me", id=draft_id, body=update_message)
+                .upload(userId="me", body=update_message)
                 .execute()
             )
             return results

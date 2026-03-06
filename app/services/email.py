@@ -10,16 +10,14 @@ from app.api.gmail import GmailAPI
 from app.api.outlook import OutlookAPI
 
 from app.schemas.request import (
-    EmailFetchRequest,
-    MessageIdRequest,
     MessageBatchDeleteRequest,
     CreateLabelRequest,
     MessageModifyLabelRequest,
     MessageBatchModifyLabelRequest,
-    SyncLabelsRequest,
     UserRequest,
     CreateDraftRequest,
 )
+from app.schemas.response import DraftsResposnse
 from app.schemas.query import DraftsQueryParams, MessageParam, MessagesParam
 
 
@@ -350,7 +348,10 @@ class EmailService:
 
         res = provider_service.get_draft(draft_id, current_user, self.db, format)
 
-        return res
+        if res is None:
+            raise HTTPException(status_code=404, detail=f"Error getting draft :{res}")
+
+        return Draft(**res)
 
     def get_drafts(self, params: DraftsQueryParams, current_user: UserRequest):
         if current_user.provider == "gmail":
@@ -362,10 +363,10 @@ class EmailService:
 
         res = provider_service.get_drafts(params, current_user, self.db)
 
-        return res
+        if res is None:
+            raise HTTPException(status_code=400, detail=f"Error getting drafts :{res}")
 
-    def draft_send(self):
-        pass
+        return res
 
     def update_draft(
         self, draft_id: str, req: CreateDraftRequest, current_user: UserRequest
@@ -378,6 +379,22 @@ class EmailService:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
         res = provider_service.update_draft(draft_id, req, current_user, self.db)
+        if res is None:
+            raise HTTPException(status_code=400, detail=f"Error updating draft :{res}")
+
+        return Draft(**res)
+
+    def upload_draft(
+        self, draft_id: str, req: CreateDraftRequest, current_user: UserRequest
+    ):
+        if current_user.provider == "gmail":
+            provider_service = GmailAPI(self.config)
+        elif current_user.provider == "outlook":
+            provider_service = OutlookAPI(self.config)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+
+        res = provider_service.upload_draft(draft_id, req, current_user, self.db)
         if res is None:
             raise HTTPException(status_code=400, detail=f"Error updating draft :{res}")
 

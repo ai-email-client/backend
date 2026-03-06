@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 from app.schemas.dify import DifySummary
-from app.schemas.email import Attachment, Sender, Message
+from app.schemas.email import Attachment, Draft, Sender, Message
 from app.schemas.category import Category
 
 
@@ -126,3 +126,9 @@ class WritterResponse(BaseModel):
     tone_used: Optional[str] = None
     draft: Optional[str] = None
     confidence: Optional[float] = None
+
+
+class DraftsResposnse(BaseModel):
+    drafts: List["Draft"]
+    nextPageToken: Optional[str] = None
+    resultSizeEstimate: Optional[int] = None
