@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
-from app.schemas.dify import DifySummary
+from app.schemas.dify import DifySummary, DifyDraft
 from app.schemas.email import Attachment, Draft, Sender, Message
 from app.schemas.category import Category
 
@@ -59,6 +59,7 @@ class CredentialResponse(BaseModel):
 
 class DifyOutputs(BaseModel):
     clean_email: Optional[DifySummary] = None
+    result: Optional[str] = ""
 
 
 class DifyDataResponse(BaseModel):
@@ -74,7 +75,7 @@ class DifyDataResponse(BaseModel):
     finished_at: int
 
 
-class DifyResponse(BaseModel):
+class DifySummaryResponse(BaseModel):
     task_id: str
     workflow_run_id: str
     data: DifyDataResponse | None
@@ -122,10 +123,7 @@ class CategoryListResponse(BaseModel):
     labels: List[Category]
 
 
-class WritterResponse(BaseModel):
-    tone_used: Optional[str] = None
-    draft: Optional[str] = None
-    confidence: Optional[float] = None
+
 
 
 class DraftsResposnse(BaseModel):

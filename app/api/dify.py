@@ -1,6 +1,7 @@
-from typing import List
 import requests
+import json
 import urllib3
+from typing import List
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -10,10 +11,19 @@ from app.schemas.request import (
 from app.utility import clean_text
 from config import Config
 from app.schemas.response import (
-    DifyResponse, OverviewResponse
+    DifySummaryResponse, OverviewResponse
 )
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+dify_session = requests.Session()
+retry_strategy = Retry(
+    total=3,
+    backoff_factor=1,
+    status_forcelist=[429, 500, 502, 503, 504],
+)
+adapter = HTTPAdapter(max_retries=retry_strategy)
+dify_session.mount("http://", adapter)
+dify_session.mount("https://", adapter)
 
 class DifyAPI():
     def __init__(self, config: Config):
@@ -39,19 +49,8 @@ class DifyAPI():
         }
         
         try:
-            session = requests.Session()
             
-            retry_strategy = Retry(
-                total=3,
-                backoff_factor=1,
-                status_forcelist=[429, 500, 502, 503, 504],
-            )
-            
-            adapter = HTTPAdapter(max_retries=retry_strategy)
-            session.mount("http://", adapter)
-            session.mount("https://", adapter)
-            
-            response = session.post(
+            response = dify_session.post(
                 url=url,
                 headers=headers,
                 json=payload,
@@ -61,14 +60,15 @@ class DifyAPI():
             
             response.raise_for_status()
             
-            return DifyResponse(**response.json())
+            return DifySummaryResponse(**response.json())
 
         except Exception as e:
             print(f"Error in DifyAPI.get_summary: {e}")
             return None
 
-    def get_writer(self, req: WritterRequest):
+    def get_writter(self, req: WritterRequest):
         url = self.config.DIFY_URL
+        print(f"req: {req}", flush=True)
         if not url:
             raise Exception("Dify URL is not configured")
 
@@ -77,29 +77,15 @@ class DifyAPI():
             "Content-Type": "application/json",
             "ngrok-skip-browser-warning": "true"
         }
-
+        inputs_data = json.loads(req.model_dump_json())
         payload = {
-            "inputs": {
-                **req.model_dump()
-            },
+            "inputs": inputs_data,
             "response_mode": "blocking",
             "user": "frontend-test"
         }
         
         try:
-            session = requests.Session()
-            
-            retry_strategy = Retry(
-                total=3,
-                backoff_factor=1,
-                status_forcelist=[429, 500, 502, 503, 504],
-            )
-            
-            adapter = HTTPAdapter(max_retries=retry_strategy)
-            session.mount("http://", adapter)
-            session.mount("https://", adapter)
-            
-            response = session.post(
+            response = dify_session.post(
                 url=url,
                 headers=headers,
                 json=payload,
@@ -109,11 +95,13 @@ class DifyAPI():
             
             response.raise_for_status()
             
-            return response
+            result_data = response.json() 
+            
+            return DifySummaryResponse(**result_data)
 
         except Exception as e:
-            print(f"Error in DifyAPI.get_overview: {e}")
-            return None
+            print(f"Error in DifyAPI.get_writter: {e}")
+            return {"error": str(e), "status": "failed"}
 
     def get_overview(self, req: OverviewRequest):
         url = self.config.DIFY_URL
@@ -157,7 +145,7 @@ class DifyAPI():
             
             response.raise_for_status()
             
-            return response
+            return DifySummaryResponse(**response.json())
 
         except Exception as e:
             print(f"Error in DifyAPI.get_overview: {e}")

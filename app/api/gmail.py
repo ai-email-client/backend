@@ -578,11 +578,22 @@ class GmailAPI:
             message["To"] = req.to
             message["From"] = current_user.email_address
             message["Subject"] = req.subject
-            message.set_content(req.message)
+            message.set_content(req.content)
 
             encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-
-            create_message = {"message": {"raw": encoded_message}}
+            if req.message is not None:
+                create_message = {
+                    "message": {
+                        "raw": encoded_message,
+                        'threadId': req.message.threadId
+                    }
+                }
+            else:
+                create_message = {
+                    "message": {
+                        "raw": encoded_message,
+                    }
+                    }
 
             results = (
                 service.users()
@@ -590,6 +601,7 @@ class GmailAPI:
                 .create(userId="me", body=create_message)
                 .execute()
             )
+            print("Results:", results)
             return results
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())
@@ -643,22 +655,48 @@ class GmailAPI:
                 )
                 .execute()
             )
-            if "drafts" not in msgs:
+
+            if msgs.get("drafts") is None:
                 return DraftsResposnse(drafts=[])
             drafts = DraftsResposnse(**msgs).drafts
-
             for draft in drafts:
-                req = (
-                    service.users()
-                    .messages()
-                    .get(userId="me", id=draft.message.id, format="full")
-                ).execute()
+                if draft.message is None:
+                    continue
+                req = service.users().messages().get(userId="me", id=draft.message.id, format="full").execute()
+                
+
                 attachments = utility.get_attachments(req["payload"])
                 if attachments is not None:
                     req["attachments"] = attachments
 
-                results.append(Draft(id=draft.id, message=Message(**req)))
+                body_html = utility.get_part_by_mimetype(req["payload"], "text/html")
+                body_plain = utility.get_part_by_mimetype(req["payload"], "text/plain")
 
+                if body_html is None:
+                    text_html = ""
+                else:
+                    text_html = utility.decode_base64(body_html["body"]["data"])
+
+                if body_plain is None:
+                    body_plain = utility.get_part_by_mimetype(
+                        req["payload"], "text/html"
+                    )
+                    if body_plain is None:
+                        raise HTTPException(
+                            status_code=404,
+                            detail="Message text or html body not found",
+                        )
+                    text_plain = utility.clean_html(
+                        utility.decode_base64(body_plain["body"]["data"])
+                    )
+                else:
+                    text_plain = utility.decode_base64(body_plain["body"]["data"])
+                    text_plain = utility.clean_text(text_plain)
+
+                req["text_plain"] = text_plain
+                req["text_html"] = text_html
+
+                results.append(Draft(id=draft.id, message=Message(**req)))
             return DraftsResposnse(drafts=results)
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())
@@ -678,7 +716,7 @@ class GmailAPI:
                 message["To"] = req.to
                 message["From"] = current_user.email_address
                 message["Subject"] = req.subject
-                message.set_content(req.message)
+                message.set_content(req.content)
                 if req.attachments:
                     for att in req.attachments:
                         if att.data:
@@ -699,11 +737,19 @@ class GmailAPI:
                 raw_bytes = message.as_bytes()
                 encoded_message = base64.urlsafe_b64encode(raw_bytes).decode('utf-8')
                 
-                update_body = {
-                    "message": {
-                        "raw": encoded_message
+                if req.message is not None:
+                    update_body = {"message": 
+                        {
+                            "raw": encoded_message,
+                            'threadId': req.message.threadId
+                        }
                     }
-                }
+                else:
+                    update_body = {"message": 
+                        {
+                            "raw": encoded_message,
+                        }
+                    }
 
                 results = (
                     service.users()
@@ -732,7 +778,7 @@ class GmailAPI:
             message["To"] = req.to
             message["From"] = current_user.email_address
             message["Subject"] = req.subject
-            message.set_content(req.message)
+            message.set_content(req.content)
 
             encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
 

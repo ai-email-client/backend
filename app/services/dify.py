@@ -5,15 +5,18 @@ from app.api.gmail import GmailAPI
 from app.api.outlook import OutlookAPI
 from config import Config
 from database import SupabaseDB
+from app.utility import parse_json_response
 
 from app.schemas.dify import (
-    Status
+    Status,
+    DifyDraft
 )
 from app.schemas.request import (
     DataInsertSummaryRequest,
     MessageModifyLabelRequest,
     OverviewItemRequest,
     OverviewRequest,
+    WritterRequest
 )
 from app.schemas.response import (
     OverviewResponse
@@ -113,4 +116,11 @@ class DifyService():
         res = dify_api.get_overview(OverviewRequest(data=dify_req))
         return dify_req
     
-        
+    def send_to_writter(self, req: WritterRequest):
+        dify_api = DifyAPI(self.config)
+        try:
+            res = dify_api.get_writter(req)
+            return DifyDraft(**parse_json_response(res.data.outputs.result))
+        except Exception as e:
+            print(f"Exception in send_to_writter: {str(e)}", flush=True)
+            return None 

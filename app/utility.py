@@ -265,3 +265,13 @@ def verify_pin(plain_pin: str, stored_hash: str, salt: str) -> bool:
     new_hash = hash_pin(plain_pin, salt)
 
     return hmac.compare_digest(new_hash, stored_hash)
+
+def parse_json_response(raw_json):
+    clean_json = raw_json.replace('```json', '').replace('```', '').strip()
+
+    try:
+        data = json.loads(clean_json)
+        return data
+    except json.JSONDecodeError as e:
+        print(f"Error parsing JSON: {e}")
+        return None

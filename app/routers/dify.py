@@ -9,7 +9,7 @@ from app.schemas.request import (
     DataInsertSummaryRequest,
     DifySummaryBatchRequest,
     DifySummaryRequest,
-    OverviewRequest,
+    WritterRequest,
     UserRequest,
 )
 from app.services.email import EmailService
@@ -234,3 +234,18 @@ async def get_overview(
         return res
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
+
+@router.post("/writter")
+async def writter(
+    req: WritterRequest,
+    dify_service: DifyService = Depends(get_dify_service),
+):
+    try:
+        res = dify_service.send_to_writter(req)
+        if res is None:
+            return HTTPException(status_code=404, detail="Writter request failed")
+        print(res, flush=True)
+        return res
+    except Exception as e:
+        return HTTPException(status_code=500, detail=str(e))
+

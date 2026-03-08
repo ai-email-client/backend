@@ -88,3 +88,8 @@ class DifySummary(BaseModel):
 
         except Exception:
             return None
+
+class DifyDraft(BaseModel):
+    tone_used: Optional[str] = None
+    draft: Optional[str] = None
+    confidence: Optional[float] = None
