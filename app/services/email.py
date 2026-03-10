@@ -1,7 +1,7 @@
 from typing import List
 from app import utility
 from app.schemas.category import Category
-from app.schemas.email import Attachment, AttachmentData, Draft, Format, Message
+from app.schemas.email import AttachmentData, Draft, Format, MessageGmail, Message
 from app.schemas.response import CategoryListResponse, MessagesResponse
 from config import Config
 from database import SupabaseDB
@@ -19,7 +19,6 @@ from app.schemas.request import (
 )
 from app.schemas.response import DraftsResposnse
 from app.schemas.query import DraftsQueryParams, MessageParam, MessagesParam
-
 
 class EmailService:
     def __init__(self, config: Config, db: SupabaseDB):
@@ -48,12 +47,14 @@ class EmailService:
         res = provider_service.fetch_emails(param, current_user, self.db)
         if res is None:
             raise HTTPException(status_code=404, detail="Fetch MessageIDs not found")
-        return res
+        return MessagesResponse(**res)
 
     def get_message_batch(
         self,
         msgs: MessagesResponse,
         current_user: UserRequest,
+        format: str = Format.FULL.value,
+        metadataHeaders: List[str] = None,
     ):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
@@ -62,15 +63,83 @@ class EmailService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
         param = MessageParam(
-            # format="metadata", metadataHeaders=["Date", "From", "Subject", "To"]
-            format="full"
+            format=format,
+            metadataHeaders=metadataHeaders,
         )
         res = provider_service.get_message_batch(
             msgs.messages, param, current_user, self.db
         )
         if res is None:
             raise HTTPException(status_code=404, detail=f"Messages not found")
+        
+        for msg in res:
+            if param.format != "raw":
+                attachments = utility.get_attachments(msg["payload"])
+                if len(attachments) > 0:
+                    msg["attachments"] = attachments
 
+                msg["to"] = utility.get_header_value(msg["payload"], "To")
+                msg["sender"] = utility.get_header_value(msg["payload"], "From")
+                msg["subject"] = utility.get_header_value(msg["payload"], "Subject")
+                msg["date"] = utility.get_header_value(msg["payload"], "Date")
+
+                body_html = utility.get_part_by_mimetype(msg["payload"], "text/html")
+                body_plain = utility.get_part_by_mimetype(msg["payload"], "text/plain")
+
+                if body_html is None:
+                    text_html = ""
+                else:
+                    text_html = utility.decode_base64(body_html["body"]["data"])
+
+                if body_plain is None:
+                    body_plain = utility.get_part_by_mimetype(msg["payload"], "text/html")
+                    if body_plain is not None:
+                        text_plain = utility.clean_html(
+                                utility.decode_base64(body_plain["body"]["data"])
+                            )
+                    else:
+                        text_plain = ""
+                else:
+                    text_plain = utility.decode_base64(body_plain["body"]["data"])
+                    text_plain = utility.clean_text(text_plain)
+
+                msg["text_plain"] = text_plain
+                msg["text_html"] = text_html
+
+            else:
+                message = utility.parse_raw_message_from_string(msg["raw"])
+                msg["attachments"] = utility.get_attachments_from_iterator(message.iter_attachments())
+
+                msg["to"] = message.get("To")
+                msg["sender"] = message.get("From")
+                msg["subject"] = message.get("Subject")
+                msg["date"] = message.get("Date")
+
+                body_html = message.get_body("html")
+                body_plain = message.get_body("plain")
+
+                if body_html is None or body_html.get_content() == "":
+                    text_html = ""
+                else:
+                    text_html = body_html.get_content()
+
+                if body_plain is None or body_plain.get_content() == "":
+                    body_plain = body_html
+                    if body_plain is not None:
+                        text_plain = utility.clean_html(
+                            body_plain.get_content()
+                        )
+                    else:
+                        text_plain = ""
+                else:
+                    text_plain = body_plain.get_content()
+                    text_plain = utility.clean_text(text_plain)
+
+                msg["text_html"] = text_html
+                msg["text_plain"] = text_plain
+                
+                msg['raw'] = ''
+        
         return MessagesResponse(
             messages=res,
             nextPageToken=msgs.nextPageToken,
@@ -92,33 +161,72 @@ class EmailService:
             raise HTTPException(
                 status_code=404, detail=f"Message with id {msg_id} not found"
             )
-        attachments = utility.get_attachments(res["payload"])
-        if attachments is not None:
-            res["attachments"] = attachments
+        
+        if param.format != "raw":
+            res['message_id'] = utility.get_header_value(res["payload"], "Message-Id")
+            attachments = utility.get_attachments(res["payload"])
+            if len(attachments) > 0:
+                res["attachments"] = attachments
+            res["to"] = utility.get_header_value(res["payload"], "To")
+            res["sender"] = utility.get_header_value(res["payload"], "From")
+            res["subject"] = utility.get_header_value(res["payload"], "Subject")
+            res["date"] = utility.get_header_value(res["payload"], "Date")
 
-        body_html = utility.get_part_by_mimetype(res["payload"], "text/html")
-        body_plain = utility.get_part_by_mimetype(res["payload"], "text/plain")
+            body_html = utility.get_part_by_mimetype(res["payload"], "text/html")
+            body_plain = utility.get_part_by_mimetype(res["payload"], "text/plain")
 
-        if body_html is None:
-            text_html = ""
-        else:
-            text_html = utility.decode_base64(body_html["body"]["data"])
+            if body_html is None:
+                text_html = ""
+            else:
+                text_html = utility.decode_base64(body_html["body"]["data"])
 
-        if body_plain is None:
-            body_plain = utility.get_part_by_mimetype(res["payload"], "text/html")
             if body_plain is None:
-                raise HTTPException(
-                    status_code=404, detail="Message text or html body not found"
-                )
-            text_plain = utility.clean_html(
-                utility.decode_base64(body_plain["body"]["data"])
-            )
-        else:
-            text_plain = utility.decode_base64(body_plain["body"]["data"])
-            text_plain = utility.clean_text(text_plain)
+                body_plain = utility.get_part_by_mimetype(res["payload"], "text/html")
+                if body_plain is not None:
+                    text_plain = utility.clean_html(
+                        utility.decode_base64(body_plain["body"]["data"])
+                    )
+                else:
+                    text_plain = ""
+            else:
+                text_plain = utility.decode_base64(body_plain["body"]["data"])
+                text_plain = utility.clean_text(text_plain)
 
-        res["text_plain"] = text_plain
-        res["text_html"] = text_html
+            res["text_plain"] = text_plain
+            res["text_html"] = text_html
+        else:
+            message = utility.parse_raw_message_from_string(res["raw"])
+            res["message_id"] = message.get("Message-Id")
+
+            res["to"] = message.get("To")
+            res["sender"] = message.get("From")
+            res["subject"] = message.get("Subject")
+            res["date"] = message.get("Date")
+
+            body_html = message.get_body("html")
+            body_plain = message.get_body("plain")
+
+            if body_html is None or body_html.get_content() == "":
+                text_html = ""
+            else:
+                text_html = body_html.get_content()
+
+            if body_plain is None or body_plain.get_content() == "":
+                body_plain = body_html
+                if body_plain is not None:
+                    text_plain = utility.clean_html(
+                        body_plain.get_content()
+                    )
+                else:
+                    text_plain = ""
+            else:
+                text_plain = body_plain.get_content()
+                text_plain = utility.clean_text(text_plain)
+
+            res["text_html"] = text_html
+            res["text_plain"] = text_plain
+            
+            res["attachments"] = utility.get_attachments_from_iterator(message.iter_attachments())
 
         return Message(**res)
 
@@ -208,7 +316,7 @@ class EmailService:
 
         if res is None:
             raise Exception(f"Labels not found for name {label_name}")
-        return res
+        return Category(**res)
 
     def message_modify_label(
         self, req: MessageModifyLabelRequest, current_user: UserRequest
@@ -235,6 +343,8 @@ class EmailService:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
         res = provider_service.message_batch_modify_label(req, current_user, self.db)
+        if res is None:
+            raise HTTPException(status_code=404, detail="Message not found")
 
         return res
 
@@ -351,6 +461,68 @@ class EmailService:
         if res is None:
             raise HTTPException(status_code=404, detail=f"Error getting draft :{res}")
 
+        if format != "raw":
+            attachments = utility.get_attachments(res["message"]["payload"])
+            if len(attachments) > 0:
+                res["message"]["attachments"] = attachments
+
+            body_html = utility.get_part_by_mimetype(res["message"]["payload"], "text/html")
+            body_plain = utility.get_part_by_mimetype(res["message"]["payload"], "text/plain")
+
+            if body_html is None:
+                text_html = ""
+            else:
+                text_html = utility.decode_base64(body_html["body"]["data"])
+
+            if body_plain is None:
+                body_plain = utility.get_part_by_mimetype(res["message"]["payload"], "text/html")
+                if body_plain is not None:
+                    text_plain = utility.clean_html(
+                        utility.decode_base64(body_plain["body"]["data"])
+                    )
+                else:
+                    text_plain = ""
+            else:
+                text_plain = utility.decode_base64(body_plain["body"]["data"])
+                text_plain = utility.clean_text(text_plain)
+
+            res["message"]["text_plain"] = text_plain
+            res["message"]["text_html"] = text_html
+        else:
+            message = utility.parse_raw_message_from_string(res["message"]["raw"])
+
+            res["message"]["to"] = message.get("To")
+            res["message"]["sender"] = message.get("From")
+            res["message"]["subject"] = message.get("Subject")
+            res["message"]["date"] = message.get("Date")
+
+            body_html = message.get_body("html")
+            body_plain = message.get_body("plain")
+
+            if body_html is None or body_html.get_content() == "":
+                text_html = ""
+            else:
+                text_html = body_html.get_content()
+
+            if body_plain is None or body_plain.get_content() == "":
+                body_plain = body_html
+                if body_plain is not None:
+                    text_plain = utility.clean_html(
+                        body_plain.get_content()
+                    )
+                else:
+                    text_plain = ""
+            else:
+                text_plain = body_plain.get_content()
+                text_plain = utility.clean_text(text_plain)
+
+            res["message"]["text_html"] = text_html
+            res["message"]["text_plain"] = text_plain
+            
+            res["message"]["attachments"] = utility.get_attachments_from_iterator(message.iter_attachments())
+            res["message"]["raw"] = ''
+
+
         return Draft(**res)
 
     def get_drafts(self, params: DraftsQueryParams, current_user: UserRequest):
@@ -365,6 +537,11 @@ class EmailService:
 
         if res is None:
             raise HTTPException(status_code=400, detail=f"Error getting drafts :{res}")
+
+        for draft in res["drafts"]:
+            print("draft:", draft)
+            pass
+
 
         return res
 
@@ -412,4 +589,5 @@ class EmailService:
         if res is None:
             raise HTTPException(status_code=400, detail=f"Error sending draft :{res}")
 
-        return Message(**res)
+        return MessageGmail(**res)
+    

@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 from app.schemas.dify import DifySummary, DifyDraft
-from app.schemas.email import Attachment, Draft, Sender, Message
+from app.schemas.email import Attachment, Draft, Message, Sender, MessageGmail
 from app.schemas.category import Category
 
 

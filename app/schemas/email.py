@@ -59,10 +59,10 @@ class MessagePart(BaseModel):
     parts: Optional[List["MessagePart"]] = []
 
 
-class Message(BaseModel):
+class MessageGmail(BaseModel):
     id: str
     threadId: str
-    labelIds: Optional[List[str]] = None
+    labelIds: List[str]
     snippet: Optional[str] = None
     historyId: Optional[str] = None
     internalDate: Optional[str] = None
@@ -74,6 +74,19 @@ class Message(BaseModel):
     raw: Optional[str] = None
     classificationLabelValues: Optional[List[ClassificationLabelValue]] = None
 
+class Message(BaseModel):
+    id: str
+    threadId: str
+    message_id: Optional[str] = None
+    labelIds: Optional[List[str]] = None
+    date: Optional[str] = None
+    to: Optional[str] = None
+    sender: Optional[str] = None
+    subject: Optional[str] = None
+    snippet: Optional[str] = None
+    text_plain: Optional[str] = None
+    text_html: Optional[str] = None
+    attachments: Optional[List["Attachment"]] = None
 
 class Sender(BaseModel):
     name: Optional[str] = None
@@ -82,4 +95,4 @@ class Sender(BaseModel):
 
 class Draft(BaseModel):
     id: str
-    message: "Message"
+    message: Message

@@ -34,12 +34,16 @@ class MessagesParam:
         q: str | None = Query(default=None),
         labelIds: List[str] = Query(default=["INBOX"]),
         includeSpamTrash: bool = Query(default=True),
+        format: str = Query(default=Format.FULL.value),
+        metadataHeaders: List[str] = Query(default=None),
     ):
         self.maxResults = maxResults
         self.pageToken = pageToken
         self.q = q
         self.labelIds = labelIds
         self.includeSpamTrash = includeSpamTrash
+        self.format = format
+        self.metadataHeaders = metadataHeaders
 
 
 class MessageParam:

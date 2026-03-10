@@ -1,7 +1,7 @@
 from typing import List, Optional
 from pydantic import BaseModel
 from app.schemas.category import Category
-from app.schemas.email import Attachment, Sender, Message
+from app.schemas.email import Attachment, Sender, MessageGmail
 
 
 class UserRequest(BaseModel):
@@ -90,5 +90,5 @@ class CreateDraftRequest(BaseModel):
     to: Optional[str] = ""
     subject: Optional[str] = ""
     content: Optional[str] = ""
-    message: Optional[Message] = None
+    message: Optional[MessageGmail] = None
     attachments: Optional[List[Attachment]] = []

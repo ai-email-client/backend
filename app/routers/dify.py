@@ -13,7 +13,7 @@ from app.schemas.request import (
     UserRequest,
 )
 from app.services.email import EmailService
-from app.utility import get_email_header
+from app.utility import get_header_value
 from dependencies import (
     get_current_user,
     get_dify_service,
@@ -173,7 +173,7 @@ async def set_summary_batch(
                     dify_req = DataInsertSummaryRequest(
                         **temp,
                         current_user=current_user,
-                        sender=get_email_header(res.payload.headers, "From"),
+                        sender=get_header_value(res.payload.headers, "From"),
                     )
 
                     queued_count += 1
@@ -191,7 +191,7 @@ async def set_summary_batch(
             #     dify_req = DifySummaryRequest(
             #         msg_id=id,
             #         email_tags=res.labelIds,
-            #         sender=get_email_header(res.payload.headers, "From"),
+            #         sender=get_header_value(res.payload.headers, "From"),
             #         plain_text=res.text_plain,
             #     )
             #     inserted = database_service.upsert_email_source(
@@ -206,7 +206,7 @@ async def set_summary_batch(
 
             #     dify_req = DataInsertSummaryRequest(
             #         **inserted.model_dump(),
-            #         sender=get_email_header(res.payload.headers, "From"),
+            #         sender=get_header_value(res.payload.headers, "From"),
             #         current_user=current_user,
             #     )
             queued_count += 1

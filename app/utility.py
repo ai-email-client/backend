@@ -7,13 +7,26 @@ import unicodedata
 import jwt
 import email
 import json
+import html
 from email.policy import default
+from email.message import EmailMessage
 from typing import Dict, Any, Optional, List
 from bs4 import BeautifulSoup
 from fastapi import HTTPException
 
-from app.schemas.email import Header
+from app.schemas.email import Header, Attachment
 
+def encode_base64(data: str) -> str:
+    try:
+        return base64.urlsafe_b64encode(data.encode("utf-8")).decode("utf-8")
+    except Exception:
+        return ""
+
+def encode_base64_bytes(data: bytes) -> str:
+    try:
+        return base64.urlsafe_b64encode(data).decode("utf-8")
+    except Exception:
+        return ""
 
 def decode_base64(data: str) -> str:
     try:
@@ -24,75 +37,18 @@ def decode_base64(data: str) -> str:
     except Exception:
         return ""
 
+def parse_raw_message_from_string(raw_string: str):
+    try:
+        msg_bytes = base64.urlsafe_b64decode(raw_string)
+        
+        return email.message_from_bytes(msg_bytes, policy=default)
+        
+    except Exception as e:
+        print(f"Error parsing message: {e}")
+        return None
 
-def raw_to_json(raw_string: str):
-    msg_bytes = base64.urlsafe_b64decode(raw_string)
-
-    msg = email.message_from_bytes(msg_bytes, policy=default)
-
-    email_data = {
-        "headers": {
-            "subject": msg.get("Subject", ""),
-            "from": msg.get("From", ""),
-            "to": msg.get("To", ""),
-            "date": msg.get("Date", ""),
-        },
-        "body": {"text": None, "html": None},
-        "attachments": [],
-    }
-
-    if msg.is_multipart():
-        for part in msg.walk():
-            content_type = part.get_content_type()
-            content_disposition = str(part.get("Content-Disposition", ""))
-
-            if "attachment" in content_disposition:
-                filename = part.get_filename()
-                if filename:
-                    email_data["attachments"].append(filename)
-                continue
-
-            try:
-                charset = part.get_content_charset("utf-8")
-
-                if content_type == "text/plain" and not email_data["body"]["text"]:
-                    payload = part.get_payload(decode=True)
-                    if isinstance(payload, bytes):
-                        email_data["body"]["text"] = payload.decode(
-                            charset or "utf-8", errors="ignore"
-                        )
-                    elif isinstance(payload, str):
-                        email_data["body"]["text"] = payload
-
-                elif content_type == "text/html" and not email_data["body"]["html"]:
-                    payload = part.get_payload(decode=True)
-                    if isinstance(payload, bytes):
-                        email_data["body"]["html"] = payload.decode(
-                            charset or "utf-8", errors="ignore"
-                        )
-                    elif isinstance(payload, str):
-                        email_data["body"]["html"] = payload
-            except Exception as e:
-                print(f"Error decoding part: {e}")
-
-    else:
-        content_type = msg.get_content_type()
-        charset = msg.get_content_charset("utf-8")
-        payload = msg.get_payload(decode=True)
-        if isinstance(payload, bytes):
-            email_data["body"]["text"] = payload.decode(
-                charset or "utf-8", errors="ignore"
-            )
-        elif isinstance(payload, str):
-            email_data["body"]["text"] = payload
-
-        if content_type == "text/plain":
-            email_data["body"]["text"] = payload
-        elif content_type == "text/html":
-            email_data["body"]["html"] = payload
-
-    return email_data
-
+def parse_raw_message_from_bytes(raw_bytes: bytes):
+    return email.message_from_bytes(raw_bytes, policy=default)
 
 def clean_html(html_content: str) -> str:
     if not html_content:
@@ -116,6 +72,7 @@ def clean_html(html_content: str) -> str:
 def clean_text(text: str) -> str:
     if not text:
         return ""
+    text = html.unescape(text)
 
     text = unicodedata.normalize("NFKC", text)
     text = re.sub(r"<[^>]+>", "", text, flags=re.DOTALL)
@@ -170,10 +127,10 @@ def convert_timestamp_to_date(timestamp: int) -> str:
     )
 
 
-def get_email_header(headers: List[Header], header_name: str) -> str:
-    for header in headers:
-        if header.name == header_name:
-            return header.value
+def get_header_value(payload: Dict[str, Any], header_name: str) -> str:
+    for header in payload["headers"]:
+        if header["name"] == header_name:
+            return header["value"]
     return ""
 
 
@@ -214,6 +171,19 @@ def get_attachments(payload: Dict[str, Any]):
             attachments.extend(get_attachments(part))
     return attachments
 
+def get_attachments_from_iterator(iterator: List[EmailMessage]):
+    attachments = []
+    for message in iterator:
+        if message.get_filename():
+            attachments.append(
+                Attachment(
+                    filename=message.get_filename(),
+                    mimeType=message.get_content_type(),
+                    size=len(message.get_content()),
+                    data=encode_base64_bytes(message.get_content())
+                )
+            )
+    return attachments
 
 def get_decode_by_mimetype(parts: Dict[str, Any], target_mimetype: str):
     if parts["mimeType"] == target_mimetype:

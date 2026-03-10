@@ -1,11 +1,9 @@
-import ast
 from fastapi import APIRouter, HTTPException, Depends
 from app.api.gmail import google_api_errors
 from app.schemas.category import Category
-from app.schemas.email import Format, Message
+from app.schemas.email import Format, MessageGmail
 from app.schemas.response import CategoryListResponse, MessagesResponse
 from config import Config
-
 from app.schemas.request import (
     UserRequest,
     EmailFetchRequest,
@@ -39,7 +37,9 @@ async def initialize_labels(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.get("/messages")
@@ -51,12 +51,16 @@ async def fetch_emails(
     try:
         msgs = email_service.fetch_emails(param, current_user)
 
-        res = email_service.get_message_batch(msgs=msgs, current_user=current_user)
+        res = email_service.get_message_batch(
+            msgs=msgs, current_user=current_user, format=param.format, metadataHeaders=param.metadataHeaders
+        )
 
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.get("/message/{msg_id}")
@@ -71,7 +75,9 @@ async def get_message_by_id(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.get("/labels")
@@ -84,7 +90,9 @@ async def get_labels(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.get("/message/{msg_id}/attachment/{attachment_id}")
@@ -99,7 +107,9 @@ async def get_attachment(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.post("/label/create")
@@ -113,7 +123,9 @@ async def create_label(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.get("/labels/sync")
@@ -126,7 +138,9 @@ async def sync_labels(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.get("/label/{label_id}")
@@ -140,7 +154,9 @@ async def get_label_by_id(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.post("/message/modify")
@@ -154,7 +170,9 @@ async def modify_label(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.post("/message/batch_modify")
@@ -168,7 +186,9 @@ async def batch_modify_label(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.delete("/message/{msg_id}")
@@ -182,7 +202,9 @@ async def delete_message(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.post("/message/batch_delete")
@@ -209,7 +231,9 @@ async def trash_message(
         return HTTPException(status_code=200, detail="Message trashed successfully")
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.put("/message/untrash/{msg_id}")
@@ -223,7 +247,9 @@ async def untrash_message(
         return HTTPException(status_code=200, detail="Message untrashed successfully")
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.post("/draft/create")
@@ -237,7 +263,9 @@ async def create_draft(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.delete("/draft/{draft_id}")
@@ -251,7 +279,9 @@ async def delete_draft(
         return HTTPException(status_code=200, detail="Draft deleted successfully")
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.get("/draft/{draft_id}")
@@ -266,7 +296,9 @@ async def get_draft(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.get("/drafts")
@@ -280,7 +312,9 @@ async def get_drafts(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.put("/draft/{draft_id}")
@@ -295,7 +329,9 @@ async def update_draft(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.put("/draft/upload/{draft_id}")
@@ -310,7 +346,9 @@ async def upload_draft(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)
 
 
 @router.post("/draft/{draft_id}/send")
@@ -324,4 +362,6 @@ async def send_draft(
         return res
     except Exception as e:
         error = str(e).split(": ", 1)
-        return HTTPException(status_code=int(error[0]), detail=str(error[1]))
+        status_code = int(error[0]) if error[0].isdigit() else 500
+        detail = str(error[1]) if len(error) > 1 else str(e)
+        return HTTPException(status_code=status_code, detail=detail)

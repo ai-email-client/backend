@@ -10,12 +10,10 @@ from googleapiclient import errors as google_api_errors
 from email.message import EmailMessage
 
 import logging
-import base64
-
 from pyparsing import results
 
 
-from app.schemas.email import Draft, Format, Message,Attachment
+from app.schemas.email import Draft, Format, MessageGmail,Attachment
 from config import Config
 from app import utility
 from database import SupabaseDB
@@ -270,14 +268,14 @@ class GmailAPI:
                 .execute()
             )
 
-            return MessagesResponse(**results)
+            return results
 
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
     def get_message_batch(
         self,
-        msgs: List[Message],
+        msgs: List[MessageGmail],
         param: MessageParam,
         current_user: UserRequest,
         db: SupabaseDB,
@@ -309,38 +307,7 @@ class GmailAPI:
                 batch.add(req, callback=callback)
 
             batch.execute()
-            for msg in results:
-                attachments = utility.get_attachments(msg["payload"])
-                if len(attachments) > 0:
-                    msg["attachments"] = attachments
-                        
-                body_html = utility.get_part_by_mimetype(msg["payload"], "text/html")
-                body_plain = utility.get_part_by_mimetype(msg["payload"], "text/plain")
-
-                if body_html is None:
-                    text_html = ""
-                else:
-                    text_html = utility.decode_base64(body_html["body"]["data"])
-
-                if body_plain is None:
-                    body_plain = utility.get_part_by_mimetype(
-                        msg["payload"], "text/html"
-                    )
-                    if body_plain is None:
-                        raise HTTPException(
-                            status_code=404,
-                            detail="Message text or html body not found",
-                        )
-                    text_plain = utility.clean_html(
-                        utility.decode_base64(body_plain["body"]["data"])
-                    )
-                else:
-                    text_plain = utility.decode_base64(body_plain["body"]["data"])
-                    text_plain = utility.clean_text(text_plain)
-
-                msg["text_plain"] = text_plain
-                msg["text_html"] = text_html
-
+                
             return results
 
         except google_api_errors.HttpError as e:
@@ -580,7 +547,7 @@ class GmailAPI:
             message["Subject"] = req.subject
             message.set_content(req.content)
 
-            encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+            encoded_message = utility.encode_base64(message.as_bytes())
             if req.message is not None:
                 create_message = {
                     "message": {
@@ -641,9 +608,8 @@ class GmailAPI:
         try:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
-            results = []
 
-            msgs = (
+            results = (
                 service.users()
                 .drafts()
                 .list(
@@ -656,48 +622,7 @@ class GmailAPI:
                 .execute()
             )
 
-            if msgs.get("drafts") is None:
-                return DraftsResposnse(drafts=[])
-            drafts = DraftsResposnse(**msgs).drafts
-            for draft in drafts:
-                if draft.message is None:
-                    continue
-                req = service.users().messages().get(userId="me", id=draft.message.id, format="full").execute()
-                
-
-                attachments = utility.get_attachments(req["payload"])
-                if attachments is not None:
-                    req["attachments"] = attachments
-
-                body_html = utility.get_part_by_mimetype(req["payload"], "text/html")
-                body_plain = utility.get_part_by_mimetype(req["payload"], "text/plain")
-
-                if body_html is None:
-                    text_html = ""
-                else:
-                    text_html = utility.decode_base64(body_html["body"]["data"])
-
-                if body_plain is None:
-                    body_plain = utility.get_part_by_mimetype(
-                        req["payload"], "text/html"
-                    )
-                    if body_plain is None:
-                        raise HTTPException(
-                            status_code=404,
-                            detail="Message text or html body not found",
-                        )
-                    text_plain = utility.clean_html(
-                        utility.decode_base64(body_plain["body"]["data"])
-                    )
-                else:
-                    text_plain = utility.decode_base64(body_plain["body"]["data"])
-                    text_plain = utility.clean_text(text_plain)
-
-                req["text_plain"] = text_plain
-                req["text_html"] = text_html
-
-                results.append(Draft(id=draft.id, message=Message(**req)))
-            return DraftsResposnse(drafts=results)
+            return results
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
@@ -735,7 +660,7 @@ class GmailAPI:
                             )
 
                 raw_bytes = message.as_bytes()
-                encoded_message = base64.urlsafe_b64encode(raw_bytes).decode('utf-8')
+                encoded_message = utility.encode_base64(raw_bytes)
                 
                 if req.message is not None:
                     update_body = {"message": 
@@ -780,7 +705,7 @@ class GmailAPI:
             message["Subject"] = req.subject
             message.set_content(req.content)
 
-            encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+            encoded_message = utility.encode_base64(message.as_bytes())
 
             update_message = {"message": {"raw": encoded_message}}
 

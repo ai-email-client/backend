@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from imap_tools import MailBox
-from app.schemas.email import Format, Message
+from app.schemas.email import Format, MessageGmail
 from app.schemas.request import (
     EmailFetchRequest,
     MessageIdRequest,
@@ -32,7 +32,7 @@ class OutlookAPI:
 
     def get_message_batch(
         self,
-        msgs: List[Message],
+        msgs: List[MessageGmail],
         param: MessageParam,
         current_user: UserRequest,
         db: SupabaseDB,
