@@ -131,6 +131,9 @@ class OutlookAPI:
         self, params: DraftsQueryParams, current_user: UserRequest, db: SupabaseDB
     ):
         pass
+    
+    def get_draft_batch(self, drafts: list, current_user: UserRequest, db: SupabaseDB, params: DraftsQueryParams):
+        pass
 
     def update_draft(
         self,

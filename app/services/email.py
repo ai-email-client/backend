@@ -75,9 +75,11 @@ class EmailService:
         for msg in res:
             if param.format != "raw":
                 msg['message_id'] = utility.get_header_value(msg["payload"], "Message-ID")
+                msg['in_reply_to'] = utility.get_header_value(msg["payload"], "In-Reply-To")
+                msg['references'] = utility.get_header_value(msg["payload"], "References")
 
                 msg["attachments"] = utility.get_attachments(msg["payload"])
-                
+
                 msg["to"] = utility.get_header_value(msg["payload"], "To")
                 msg["sender"] = utility.get_header_value(msg["payload"], "From")
                 msg["subject"] = utility.get_header_value(msg["payload"], "Subject")
@@ -108,6 +110,11 @@ class EmailService:
 
             else:
                 message = utility.parse_raw_message_from_string(msg["raw"])
+                msg['message_id'] = message.get("Message-ID")
+                msg['in_reply_to'] = message.get("In-Reply-To")
+                msg['references'] = message.get("References")
+
+
                 msg["attachments"] = utility.get_attachments_from_iterator(message.iter_attachments())
 
                 msg["to"] = message.get("To")
@@ -164,6 +171,8 @@ class EmailService:
         
         if param.format != "raw":
             res['message_id'] = utility.get_header_value(res["payload"], "Message-ID")
+            res['in_reply_to'] = utility.get_header_value(res["payload"], "In-Reply-To")
+            res['references'] = utility.get_header_value(res["payload"], "References")
 
             res["attachments"] = utility.get_attachments(res["payload"])
 
@@ -197,6 +206,8 @@ class EmailService:
         else:
             message = utility.parse_raw_message_from_string(res["raw"])
             res["message_id"] = message.get("Message-ID")
+            res["in_reply_to"] = message.get("In-Reply-To")
+            res["references"] = message.get("References")
 
             res["to"] = message.get("To")
             res["sender"] = message.get("From")
@@ -462,8 +473,9 @@ class EmailService:
             raise HTTPException(status_code=404, detail=f"Error getting draft :{res}")
 
         if format != "raw":
-            print(res["message"]["payload"])
             res["message"]["message_id"] = utility.get_header_value(res["message"]["payload"], "Message-ID")
+            res["message"]["in_reply_to"] = utility.get_header_value(res["message"]["payload"], "In-Reply-To")
+            res["message"]["references"] = utility.get_header_value(res["message"]["payload"], "References")
 
             res["message"]["attachments"] = utility.get_attachments(res["message"]["payload"])
             
@@ -497,6 +509,8 @@ class EmailService:
         else:
             message = utility.parse_raw_message_from_string(res["message"]["raw"])
             res["message"]["message_id"] = message.get("Message-ID")
+            res["message"]["in_reply_to"] = message.get("In-Reply-To")
+            res["message"]["references"] = message.get("References")
 
             res["message"]["to"] = message.get("To")
             res["message"]["sender"] = message.get("From")
@@ -540,15 +554,91 @@ class EmailService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
-        res = provider_service.get_drafts(params, current_user, self.db)
+        msgs = provider_service.get_drafts(params, current_user, self.db)
+        if msgs is None:
+            raise HTTPException(status_code=400, detail=f"Error getting drafts :{msgs}")
 
+        res = provider_service.get_draft_batch(msgs, current_user, self.db, params)
         if res is None:
-            raise HTTPException(status_code=400, detail=f"Error getting drafts :{res}")
+            raise HTTPException(status_code=400, detail=f"Error getting draft batch :{res}")
+        for draft in res:
+            if params.format != "raw":
+                draft["message"]["message_id"] = utility.get_header_value(draft["message"]["payload"], "Message-ID")
+                draft["message"]["in_reply_to"] = utility.get_header_value(draft["message"]["payload"], "In-Reply-To")
+                draft["message"]["references"] = utility.get_header_value(draft["message"]["payload"], "References")
 
-        res = provider_service.get_draft_batch()
+                draft["message"]["attachments"] = utility.get_attachments(draft["message"]["payload"])
+                
+                draft["message"]["to"] = utility.get_header_value(draft["message"]["payload"], "To")
+                draft["message"]["sender"] = utility.get_header_value(draft["message"]["payload"], "From")
+                draft["message"]["subject"] = utility.get_header_value(draft["message"]["payload"], "Subject")
+                draft["message"]["date"] = utility.get_header_value(draft["message"]["payload"], "Date")
 
+                body_html = utility.get_part_by_mimetype(draft["message"]["payload"], "text/html")
+                body_plain = utility.get_part_by_mimetype(draft["message"]["payload"], "text/plain")
 
-        return res
+                if body_html is None:
+                    text_html = ""
+                else:
+                    text_html = utility.decode_base64(body_html["body"]["data"])
+
+                if body_plain is None:
+                    body_plain = utility.get_part_by_mimetype(res["message"]["payload"], "text/html")
+                    if body_plain is not None:
+                        text_plain = utility.clean_html(
+                            utility.decode_base64(body_plain["body"]["data"])
+                        )
+                    else:
+                        text_plain = ""
+                else:
+                    text_plain = utility.decode_base64(body_plain["body"]["data"])
+                    text_plain = utility.clean_text(text_plain)
+
+                draft["message"]["text_plain"] = text_plain
+                draft["message"]["text_html"] = text_html
+                
+            else:
+                message = utility.parse_raw_message_from_string(draft["message"]["raw"])
+                draft["message"]["message_id"] = message.get("Message-ID")
+                draft["message"]["in_reply_to"] = message.get("In-Reply-To")
+                draft["message"]["references"] = message.get("References")
+
+                draft["message"]["to"] = message.get("To")
+                draft["message"]["sender"] = message.get("From")
+                draft["message"]["subject"] = message.get("Subject")
+                draft["message"]["date"] = message.get("Date")
+
+                body_html = message.get_body("html")
+                body_plain = message.get_body("plain")
+
+                if body_html is None or body_html.get_content() == "":
+                    text_html = ""
+                else:
+                    text_html = body_html.get_content()
+
+                if body_plain is None or body_plain.get_content() == "":
+                    body_plain = body_html
+                    if body_plain is not None:
+                        text_plain = utility.clean_html(
+                            body_plain.get_content()
+                        )
+                    else:
+                        text_plain = ""
+                else:
+                    text_plain = body_plain.get_content()
+                    text_plain = utility.clean_text(text_plain)
+
+                draft["message"]["text_html"] = text_html
+                draft["message"]["text_plain"] = text_plain
+                
+                draft["message"]["attachments"] = utility.get_attachments_from_iterator(message.iter_attachments())
+                draft["message"]["raw"] = ''
+
+        return DraftsResposnse(
+            drafts=res,
+            nextPageToken=msgs.nextPageToken,
+            resultSizeEstimate=msgs.resultSizeEstimate
+        )
 
     def update_draft(
         self, draft_id: str, req: CreateDraftRequest, current_user: UserRequest

@@ -626,6 +626,34 @@ class GmailAPI:
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
+    def get_draft_batch(self, drafts: DraftsResposnse, current_user: UserRequest, db: SupabaseDB, params: DraftsQueryParams):
+        try:
+            credentials = self.get_stored_credentials(current_user.email_address, db)
+            service = self.build_service(credentials)
+            results = []
+
+            def callback(request_id, response, exception):
+                if exception is not None:
+                    print(f"Error ID {request_id}: {exception}")
+                else:
+                    results.append(response)
+
+            batch = service.new_batch_http_request()
+
+            for draft in drafts["drafts"]:
+                req = (
+                    service.users()
+                    .drafts()
+                    .get(userId="me", id=draft["id"], format=params.format)
+                )
+                batch.add(req, callback=callback)
+
+            batch.execute()
+            
+            return results
+        except google_api_errors.HttpError as e:
+            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
+
     def update_draft(
         self,
         draft_id: str,

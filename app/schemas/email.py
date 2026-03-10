@@ -78,6 +78,8 @@ class Message(BaseModel):
     id: str
     threadId: str
     message_id: Optional[str] = None
+    in_reply_to: Optional[str] = None
+    references: Optional[str] = None
     labelIds: Optional[List[str]] = None
     date: Optional[str] = None
     to: Optional[str] = None
@@ -87,6 +89,9 @@ class Message(BaseModel):
     text_plain: Optional[str] = None
     text_html: Optional[str] = None
     attachments: Optional[List["Attachment"]] = None
+    sizeEstimate: Optional[int] = None
+    historyId: Optional[str] = None
+    internalDate: Optional[str] = None
 
 class Sender(BaseModel):
     name: Optional[str] = None

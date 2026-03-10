@@ -11,11 +11,14 @@ class DraftsQueryParams:
         pageToken: str | None = Query(default=None),
         q: str | None = Query(default=None),
         includeSpamTrash: bool = Query(default=False),
+        format: str = Query(default=Format.FULL.value),
     ):
         self.maxResults = maxResults
         self.pageToken = pageToken
         self.q = q
         self.includeSpamTrash = includeSpamTrash
+        self.format = format
+
 
 
 class DraftQueryParam:
