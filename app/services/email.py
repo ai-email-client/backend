@@ -74,10 +74,10 @@ class EmailService:
         
         for msg in res:
             if param.format != "raw":
-                attachments = utility.get_attachments(msg["payload"])
-                if len(attachments) > 0:
-                    msg["attachments"] = attachments
+                msg['message_id'] = utility.get_header_value(msg["payload"], "Message-ID")
 
+                msg["attachments"] = utility.get_attachments(msg["payload"])
+                
                 msg["to"] = utility.get_header_value(msg["payload"], "To")
                 msg["sender"] = utility.get_header_value(msg["payload"], "From")
                 msg["subject"] = utility.get_header_value(msg["payload"], "Subject")
@@ -163,10 +163,10 @@ class EmailService:
             )
         
         if param.format != "raw":
-            res['message_id'] = utility.get_header_value(res["payload"], "Message-Id")
-            attachments = utility.get_attachments(res["payload"])
-            if len(attachments) > 0:
-                res["attachments"] = attachments
+            res['message_id'] = utility.get_header_value(res["payload"], "Message-ID")
+
+            res["attachments"] = utility.get_attachments(res["payload"])
+
             res["to"] = utility.get_header_value(res["payload"], "To")
             res["sender"] = utility.get_header_value(res["payload"], "From")
             res["subject"] = utility.get_header_value(res["payload"], "Subject")
@@ -196,7 +196,7 @@ class EmailService:
             res["text_html"] = text_html
         else:
             message = utility.parse_raw_message_from_string(res["raw"])
-            res["message_id"] = message.get("Message-Id")
+            res["message_id"] = message.get("Message-ID")
 
             res["to"] = message.get("To")
             res["sender"] = message.get("From")
@@ -462,9 +462,15 @@ class EmailService:
             raise HTTPException(status_code=404, detail=f"Error getting draft :{res}")
 
         if format != "raw":
-            attachments = utility.get_attachments(res["message"]["payload"])
-            if len(attachments) > 0:
-                res["message"]["attachments"] = attachments
+            print(res["message"]["payload"])
+            res["message"]["message_id"] = utility.get_header_value(res["message"]["payload"], "Message-ID")
+
+            res["message"]["attachments"] = utility.get_attachments(res["message"]["payload"])
+            
+            res["message"]["to"] = utility.get_header_value(res["message"]["payload"], "To")
+            res["message"]["sender"] = utility.get_header_value(res["message"]["payload"], "From")
+            res["message"]["subject"] = utility.get_header_value(res["message"]["payload"], "Subject")
+            res["message"]["date"] = utility.get_header_value(res["message"]["payload"], "Date")
 
             body_html = utility.get_part_by_mimetype(res["message"]["payload"], "text/html")
             body_plain = utility.get_part_by_mimetype(res["message"]["payload"], "text/plain")
@@ -490,6 +496,7 @@ class EmailService:
             res["message"]["text_html"] = text_html
         else:
             message = utility.parse_raw_message_from_string(res["message"]["raw"])
+            res["message"]["message_id"] = message.get("Message-ID")
 
             res["message"]["to"] = message.get("To")
             res["message"]["sender"] = message.get("From")
@@ -538,9 +545,7 @@ class EmailService:
         if res is None:
             raise HTTPException(status_code=400, detail=f"Error getting drafts :{res}")
 
-        for draft in res["drafts"]:
-            print("draft:", draft)
-            pass
+        res = provider_service.get_draft_batch()
 
 
         return res
