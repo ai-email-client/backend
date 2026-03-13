@@ -13,7 +13,7 @@ from app.schemas.request import (
     UserRequest,
 )
 from app.services.email import EmailService
-from app.utility import get_header_value
+from app.email_parser import get_header_value
 from dependencies import (
     get_current_user,
     get_dify_service,

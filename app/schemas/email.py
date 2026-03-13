@@ -14,6 +14,9 @@ class Header(BaseModel):
     name: str
     value: str
 
+class Sender(BaseModel):
+    email: Optional[str] = None
+    name: Optional[str] = None
 
 class MessageResponse(BaseModel):
     id: str
@@ -75,27 +78,30 @@ class MessageGmail(BaseModel):
     classificationLabelValues: Optional[List[ClassificationLabelValue]] = None
 
 class Message(BaseModel):
-    id: str
-    threadId: str
-    message_id: Optional[str] = None
-    in_reply_to: Optional[str] = None
-    references: Optional[str] = None
-    labelIds: Optional[List[str]] = None
-    date: Optional[str] = None
-    to: Optional[str] = None
-    sender: Optional[str] = None
+    id: str                                   
+    threadId: str                             
+    message_id: Optional[str] = None         
+    historyId: Optional[str] = None          
+
+    sender: Optional[Sender] = None             
+    to: Optional[List[Sender]] = None
+    cc: Optional[List[Sender]] = None
+    bcc: Optional[List[Sender]] = None                
+
     subject: Optional[str] = None
-    snippet: Optional[str] = None
+    snippet: Optional[str] = None            
     text_plain: Optional[str] = None
     text_html: Optional[str] = None
-    attachments: Optional[List["Attachment"]] = None
-    sizeEstimate: Optional[int] = None
-    historyId: Optional[str] = None
-    internalDate: Optional[str] = None
 
-class Sender(BaseModel):
-    name: Optional[str] = None
-    type: Optional[str] = None
+    attachments: Optional[List[Attachment]] = None
+
+    in_reply_to: Optional[str] = None        
+    references: Optional[str] = None         
+
+    labelIds: Optional[List[str]] = None     
+    date: Optional[str] = None              
+    internalDate: Optional[str] = None      
+    sizeEstimate: Optional[int] = None
 
 
 class Draft(BaseModel):

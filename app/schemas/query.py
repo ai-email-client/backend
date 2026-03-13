@@ -12,12 +12,14 @@ class DraftsQueryParams:
         q: str | None = Query(default=None),
         includeSpamTrash: bool = Query(default=False),
         format: str = Query(default=Format.FULL.value),
+        metadataHeaders: List[str] = Query(default=None),
     ):
         self.maxResults = maxResults
         self.pageToken = pageToken
         self.q = q
         self.includeSpamTrash = includeSpamTrash
         self.format = format
+        self.metadataHeaders = metadataHeaders
 
 
 

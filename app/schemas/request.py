@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel
 from app.schemas.category import Category
 from app.schemas.email import Attachment, Sender, MessageGmail
@@ -87,8 +87,13 @@ class WritterRequest(BaseModel):
 
 
 class CreateDraftRequest(BaseModel):
-    to: Optional[str] = ""
-    subject: Optional[str] = ""
-    content: Optional[str] = ""
-    message: Optional[MessageGmail] = None
+    to: str
+    cc: Optional[str] = ""
+    bcc: Optional[str] = ""
+    subject: str
+    content: Optional[Dict[str, str]] = None
+    threadId: Optional[str] = None
+    in_reply_to: Optional[str] = None
+    references: Optional[str] = None
+    action: Optional[str] = "new"
     attachments: Optional[List[Attachment]] = []

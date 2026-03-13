@@ -5,50 +5,12 @@ import re
 import datetime
 import unicodedata
 import jwt
-import email
 import json
 import html
-from email.policy import default
-from email.message import EmailMessage
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any
 from bs4 import BeautifulSoup
 from fastapi import HTTPException
 
-from app.schemas.email import Header, Attachment
-
-def encode_base64(data: str) -> str:
-    try:
-        return base64.urlsafe_b64encode(data.encode("utf-8")).decode("utf-8")
-    except Exception:
-        return ""
-
-def encode_base64_bytes(data: bytes) -> str:
-    try:
-        return base64.urlsafe_b64encode(data).decode("utf-8")
-    except Exception:
-        return ""
-
-def decode_base64(data: str) -> str:
-    try:
-        padding = len(data) % 4
-        if padding:
-            data += "=" * (4 - padding)
-        return base64.urlsafe_b64decode(data).decode("utf-8")
-    except Exception:
-        return ""
-
-def parse_raw_message_from_string(raw_string: str):
-    try:
-        msg_bytes = base64.urlsafe_b64decode(raw_string)
-        
-        return email.message_from_bytes(msg_bytes, policy=default)
-        
-    except Exception as e:
-        print(f"Error parsing message: {e}")
-        return None
-
-def parse_raw_message_from_bytes(raw_bytes: bytes):
-    return email.message_from_bytes(raw_bytes, policy=default)
 
 def clean_html(html_content: str) -> str:
     if not html_content:
@@ -125,72 +87,6 @@ def convert_timestamp_to_date(timestamp: int) -> str:
     return datetime.datetime.fromtimestamp(timestamp / 1000).strftime(
         "%Y-%m-%d %H:%M:%S"
     )
-
-
-def get_header_value(payload: Dict[str, Any], header_name: str) -> str:
-    for header in payload["headers"]:
-        if header["name"] == header_name:
-            return header["value"]
-    return ""
-
-
-def get_part_by_mimetype(
-    payload: Dict[str, Any], target_mimetype: str
-) -> Optional[Dict[str, Any]]:
-    if payload["mimeType"] == target_mimetype:
-        if "body" in payload and payload["body"].get("data"):
-            return payload
-
-    if "parts" in payload:
-        for part in payload["parts"]:
-            found = get_part_by_mimetype(part, target_mimetype)
-            if found:
-                return found
-
-    return None
-
-
-def get_attachments(payload: Dict[str, Any]):
-    attachments = []
-
-    parts = payload.get("parts", [])
-
-    for part in parts:
-        if part.get("filename", ""):
-            attachments.append(
-                {
-                    "filename": part.get("filename", ""),
-                    "mimeType": part.get("mimeType", ""),
-                    "size": part.get("body", {}).get("size", 0),
-                    "attachmentId": part.get("body", {}).get("attachmentId", ""),
-                    "headers": part.get("headers", []),
-                }
-            )
-
-        if "parts" in part:
-            attachments.extend(get_attachments(part))
-    return attachments
-
-def get_attachments_from_iterator(iterator: List[EmailMessage]):
-    attachments = []
-    for message in iterator:
-        if message.get_filename():
-            attachments.append(
-                Attachment(
-                    filename=message.get_filename(),
-                    mimeType=message.get_content_type(),
-                    size=len(message.get_content()),
-                    data=encode_base64_bytes(message.get_content())
-                )
-            )
-    return attachments
-
-def get_decode_by_mimetype(parts: Dict[str, Any], target_mimetype: str):
-    if parts["mimeType"] == target_mimetype:
-        if "body" in parts and parts["body"].get("data"):
-            return decode_base64(parts["body"]["data"])
-    return ""
-
 
 def html_to_text(html_content: str) -> str:
     if not html_content:

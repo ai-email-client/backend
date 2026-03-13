@@ -25,7 +25,7 @@ class OutlookAPI:
     def initialize_labels(self, current_user: UserRequest, db: SupabaseDB):
         pass
 
-    def fetch_emails(
+    def get_messages(
         self, param: MessagesParam, current_user: UserRequest, db: SupabaseDB
     ):
         pass

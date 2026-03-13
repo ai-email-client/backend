@@ -247,14 +247,14 @@ class GmailAPI:
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
-    def fetch_emails(
+    def get_messages(
         self, param: MessagesParam, current_user: UserRequest, db: SupabaseDB
     ):
         try:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
-
-            results = (
+            results = []
+            req = (
                 service.users()
                 .messages()
                 .list(
@@ -267,23 +267,8 @@ class GmailAPI:
                 )
                 .execute()
             )
-
-            return results
-
-        except google_api_errors.HttpError as e:
-            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
-
-    def get_message_batch(
-        self,
-        msgs: List[MessageGmail],
-        param: MessageParam,
-        current_user: UserRequest,
-        db: SupabaseDB,
-    ):
-        try:
-            credentials = self.get_stored_credentials(current_user.email_address, db)
-            service = self.build_service(credentials)
-            results = []
+            nextPageToken = req.get("nextPageToken")
+            resultSizeEstimate = req.get("resultSizeEstimate")
 
             def callback(request_id, response, exception):
                 if exception is not None:
@@ -293,13 +278,13 @@ class GmailAPI:
 
             batch = service.new_batch_http_request()
 
-            for msg in msgs:
+            for msg in req.get("messages", []):
                 req = (
                     service.users()
                     .messages()
                     .get(
                         userId="me",
-                        id=msg.id,
+                        id=msg.get("id"),
                         format=param.format,
                         metadataHeaders=param.metadataHeaders,
                     )
@@ -307,8 +292,8 @@ class GmailAPI:
                 batch.add(req, callback=callback)
 
             batch.execute()
-                
-            return results
+
+            return {"messages": results, "nextPageToken": nextPageToken, "resultSizeEstimate": resultSizeEstimate}
 
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())
@@ -545,6 +530,10 @@ class GmailAPI:
             message["To"] = req.to
             message["From"] = current_user.email_address
             message["Subject"] = req.subject
+            if req.cc:
+                message["Cc"] = req.cc
+            if req.bcc:
+                message["Bcc"] = req.bcc
             message.set_content(req.content)
 
             encoded_message = utility.encode_base64(message.as_bytes())
@@ -592,13 +581,11 @@ class GmailAPI:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
 
-            results = (
-                service.users()
-                .drafts()
-                .get(userId="me", id=draft_id, format=format)
-                .execute()
-            )
-            return results
+            results = service.users().drafts().get(userId="me", id=draft_id, format=format).execute()
+            draft_id = results.get("id", "")
+            
+            
+            return {"id": draft_id, "message": results.get("message", {})}
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
@@ -608,49 +595,47 @@ class GmailAPI:
         try:
             credentials = self.get_stored_credentials(current_user.email_address, db)
             service = self.build_service(credentials)
-
-            results = (
-                service.users()
-                .drafts()
-                .list(
-                    userId="me",
-                    maxResults=params.maxResults,
-                    pageToken=params.pageToken,
-                    q=params.q,
-                    includeSpamTrash=params.includeSpamTrash,
-                )
-                .execute()
-            )
-
-            return results
-        except google_api_errors.HttpError as e:
-            raise HTTPException(status_code=e.status_code, detail=e._get_reason())
-
-    def get_draft_batch(self, drafts: DraftsResposnse, current_user: UserRequest, db: SupabaseDB, params: DraftsQueryParams):
-        try:
-            credentials = self.get_stored_credentials(current_user.email_address, db)
-            service = self.build_service(credentials)
             results = []
+
+            res = service.users().drafts().list(
+                userId="me",
+                maxResults=params.maxResults,
+                pageToken=params.pageToken,
+                q=params.q,
+                includeSpamTrash=params.includeSpamTrash,
+            ).execute()
+
+            nextPageToken = res.get("nextPageToken", None)
+            resultSizeEstimate = res.get("resultSizeEstimate", 0)
 
             def callback(request_id, response, exception):
                 if exception is not None:
                     print(f"Error ID {request_id}: {exception}")
                 else:
-                    results.append(response)
+                    results.append({
+                        "id": response.get("id", ""),
+                        "message": response.get("message", {})
+                    })
 
             batch = service.new_batch_http_request()
 
-            for draft in drafts["drafts"]:
+            for draft in res.get("drafts", []):
+                
                 req = (
                     service.users()
                     .drafts()
-                    .get(userId="me", id=draft["id"], format=params.format)
+                    .get(userId="me", id=draft.get("id"), format=params.format)
                 )
                 batch.add(req, callback=callback)
 
             batch.execute()
-            
-            return results
+
+            return {
+                "drafts": results,
+                "nextPageToken": nextPageToken,
+                "resultSizeEstimate": resultSizeEstimate
+            }
+
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 
@@ -667,13 +652,16 @@ class GmailAPI:
                                 
                 message = EmailMessage()
                 message["To"] = req.to
+                message["Cc"] = req.cc
+                message["Bcc"] = req.bcc
                 message["From"] = current_user.email_address
                 message["Subject"] = req.subject
+                
                 message.set_content(req.content)
                 if req.attachments:
                     for att in req.attachments:
                         if att.data:
-                            file_data = base64.b64decode(att.data)
+                            file_data = utility.decode_base64(att.data)
                             
                             if '/' in att.mimeType:
                                 m_type, s_type = att.mimeType.split('/', 1)
@@ -688,21 +676,14 @@ class GmailAPI:
                             )
 
                 raw_bytes = message.as_bytes()
-                encoded_message = utility.encode_base64(raw_bytes)
+                encoded_message = utility.encode_base64_bytes(raw_bytes)
                 
-                if req.message is not None:
-                    update_body = {"message": 
-                        {
-                            "raw": encoded_message,
-                            'threadId': req.message.threadId
-                        }
+                update_body = {"message": 
+                    {
+                        "raw": encoded_message,
+                        'threadId': req.threadId
                     }
-                else:
-                    update_body = {"message": 
-                        {
-                            "raw": encoded_message,
-                        }
-                    }
+                }
 
                 results = (
                     service.users()

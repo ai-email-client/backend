@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.pool import reset_none
 from app.api.gmail import google_api_errors
 from app.schemas.category import Category
 from app.schemas.email import Format, MessageGmail
@@ -43,17 +44,13 @@ async def initialize_labels(
 
 
 @router.get("/messages")
-async def fetch_emails(
+async def get_messages(
     param: MessagesParam = Depends(),
     current_user: UserRequest = Depends(get_current_user),
     email_service: EmailService = Depends(get_email_service),
 ):
     try:
-        msgs = email_service.fetch_emails(param, current_user)
-
-        res = email_service.get_message_batch(
-            msgs=msgs, current_user=current_user, format=param.format, metadataHeaders=param.metadataHeaders
-        )
+        res = email_service.get_messages(param, current_user)
 
         return res
     except Exception as e:
