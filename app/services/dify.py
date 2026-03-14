@@ -103,6 +103,16 @@ class DifyService():
         except Exception as e:
             print(f"Exception for id {req.id}: {str(e)}", flush=True)
 
+    async def send_to_summary(self, plain_text: str):
+        try:
+            print(f"Starting Dify API request for plain_text in the background.", flush=True)
+            dify_api = DifyAPI(self.config)
+            res = await dify_api.get_summary(plain_text)
+            
+            return res
+        except Exception as e:
+            print(f"Exception for plain_text: {str(e)}", flush=True)
+
     def send_to_overview(self, req: List[OverviewResponse]):
         dify_api = DifyAPI(self.config)
         dify_req = []

@@ -17,6 +17,7 @@ class Header(BaseModel):
 class Sender(BaseModel):
     email: Optional[str] = None
     name: Optional[str] = None
+    type: Optional[str] = None
 
 class MessageResponse(BaseModel):
     id: str

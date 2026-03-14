@@ -11,6 +11,7 @@ from app.schemas.request import (
     DifySummaryRequest,
     WritterRequest,
     UserRequest,
+    TestSummaryRequest
 )
 from app.services.email import EmailService
 from app.email_parser import get_header_value
@@ -249,3 +250,15 @@ async def writter(
     except Exception as e:
         return HTTPException(status_code=500, detail=str(e))
 
+@router.post("/summary_test")
+async def summary(
+    req: TestSummaryRequest,
+    dify_service: DifyService = Depends(get_dify_service),
+):
+    try:
+        res = await dify_service.send_to_summary(plain_text=req.email_text)
+        if res is None:
+            return HTTPException(status_code=404, detail="Summary request failed")
+        return res
+    except Exception as e:
+        return HTTPException(status_code=500, detail=str(e))

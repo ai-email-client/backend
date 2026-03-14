@@ -66,6 +66,43 @@ class DifyAPI():
             print(f"Error in DifyAPI.get_summary: {e}")
             return None
 
+    async def get_summary(self, plain_text: str):
+        url = self.config.DIFY_URL
+        if not url:
+            raise Exception("Dify URL is not configured")
+            
+        payload = {
+            "inputs": {
+                "email_text": clean_text(plain_text)[:4000],
+            },
+            "response_mode": "blocking",
+            "user": "frontend-test"
+        }
+        
+        headers = {
+            "Authorization": f"Bearer {self.config.DIFY_SUMMARY}",
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true"
+        }
+        
+        try:
+            
+            response = dify_session.post(
+                url=url,
+                headers=headers,
+                json=payload,
+                verify=False,      
+                timeout=(10, 500)
+            )
+            
+            response.raise_for_status()
+            
+            return DifySummaryResponse(**response.json())
+
+        except Exception as e:
+            print(f"Error in DifyAPI.get_summary: {e}")
+            return None
+
     def get_writter(self, req: WritterRequest):
         url = self.config.DIFY_URL
         print(f"req: {req}", flush=True)

@@ -1,3 +1,4 @@
+import re
 from enum import Enum
 from html import parser
 from datetime import timezone
@@ -18,7 +19,6 @@ TZ_INFOS = {
     "GMT": timezone.utc,
     "THAI_TZ": gettz("Asia/Bangkok"),
 }
-
 
 class Status(str, Enum):
     new = "new"
@@ -50,6 +50,61 @@ class DifySummary(BaseModel):
     security_confidence: Optional[float] = None
     extraction_status: Optional[str] = None
     confidence: Optional[float] = None
+
+    @field_validator("summary", "importance", mode="before")
+    @classmethod
+    def fix_duplicated_ai_fields(cls, data, info):
+        """
+        จัดการกรณีที่ AI ส่ง summary กับ importance เป็น string เดียวกัน เช่น:
+        "Summary: ...\n\nImportance: High\n\nReason: ..."
+        
+        - ถ้า field นี้คือ 'importance' และเป็น string → แยก level + reason ออกมา
+        - ถ้า field นี้คือ 'summary' และเป็น string → ตัดเฉพาะส่วน summary ออกมา
+        - ถ้าไม่ใช่ string (เป็น dict หรือ None แล้ว) → ปล่อยให้ BaseModel จัดการตามปกติ
+        """
+        if not isinstance(data, str):
+            return data
+
+        # ตรวจว่า string นี้มี pattern แบบ "Summary: ... Importance: ... Reason: ..."
+        # รองรับทั้ง plain text และ markdown bold (**Importance:**)
+        has_summary_block    = re.search(r'(?:\*{0,2})Summary:(?:\*{0,2})', data, re.IGNORECASE)
+        has_importance_block = re.search(r'(?:\*{0,2})Importance:(?:\*{0,2})', data, re.IGNORECASE)
+
+        # ถ้าไม่มี pattern นี้เลย → string ปกติ ปล่อยผ่าน
+        if not has_summary_block and not has_importance_block:
+            return data
+
+        field_name = info.field_name  # 'summary' หรือ 'importance'
+
+        if field_name == "summary":
+            # ดึงเฉพาะเนื้อหาหลัง "Summary:" จนถึงบรรทัดว่างถัดไปหรือก่อน "Importance:"
+            match = re.search(
+                r'(?:\*{0,2})Summary:(?:\*{0,2})\s*(.*?)(?=\n\s*\n\s*(?:\*{0,2})Importance:|$)',
+                data, re.DOTALL | re.IGNORECASE
+            )
+            return match.group(1).strip() if match else data
+
+        if field_name == "importance":
+            imp_dict = {}
+
+            match_level = re.search(
+                r'(?:\*{0,2})Importance:(?:\*{0,2})\s*([A-Za-z]+)',
+                data, re.IGNORECASE
+            )
+            match_reason = re.search(
+                r'(?:\*{0,2})Reason:(?:\*{0,2})\s*(.*?)(?=\n\s*\n|$)',
+                data, re.DOTALL | re.IGNORECASE
+            )
+
+            if match_level:
+                imp_dict['level'] = match_level.group(1).strip().capitalize()
+            if match_reason:
+                imp_dict['reason'] = match_reason.group(1).strip()
+
+            # ถ้า parse ไม่ได้เลย fallback เป็น None แทนที่จะคืน string ที่ผิด format
+            return imp_dict if imp_dict else None
+
+        return data
 
     @field_validator("date", mode="before")
     @classmethod

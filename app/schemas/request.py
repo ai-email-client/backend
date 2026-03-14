@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from app.schemas.category import Category
 from app.schemas.email import Attachment, Sender, MessageGmail
 
+class TestSummaryRequest(BaseModel):
+    email_text: str
 
 class UserRequest(BaseModel):
     email_address: str
