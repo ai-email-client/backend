@@ -54,21 +54,19 @@ class DifySummary(BaseModel):
     @field_validator("summary", "importance", mode="before")
     @classmethod
     def fix_duplicated_ai_fields(cls, data, info):
-
         if not isinstance(data, str):
             return data
 
-        has_summary_block    = re.search(r'(?:\*{0,2})Summary:(?:\*{0,2})', data, re.IGNORECASE)
         has_importance_block = re.search(r'(?:\*{0,2})Importance:(?:\*{0,2})', data, re.IGNORECASE)
 
-        if not has_summary_block and not has_importance_block:
+        if not has_importance_block:
             return data
 
         field_name = info.field_name
 
         if field_name == "summary":
             match = re.search(
-                r'(?:\*{0,2})Summary:(?:\*{0,2})\s*(.*?)(?=\n{1,2}\s*(?:\*{0,2})Importance:|$)',
+                r'^(.*?)(?=\n+\s*(?:\*{0,2})Importance:(?:\*{0,2}))',
                 data, re.DOTALL | re.IGNORECASE
             )
             return match.group(1).strip() if match else data
@@ -81,7 +79,7 @@ class DifySummary(BaseModel):
                 data, re.IGNORECASE
             )
             match_reason = re.search(
-                r'(?:\*{0,2})Reason:(?:\*{0,2})\s*(.*?)(?=\n\s*\n|$)',
+                r'(?:\*{0,2})Reason:(?:\*{0,2})\s*(.*?)(?=\n+\s*(?:\*{0,2})[A-Z]|\Z)',
                 data, re.DOTALL | re.IGNORECASE
             )
 

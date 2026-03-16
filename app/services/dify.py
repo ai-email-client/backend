@@ -43,7 +43,7 @@ class DifyService():
             if res is None:
                 raise ValueError(f"[{req.id}] res is None — Dify API returned None")
             if res.data.status != 'succeeded':
-                raise ValueError(f"[{req.id}] Dify API returned status: {res.data.status}")
+                raise ValueError(f"[{req.id}] Dify API returned status: {res.data.status} error: {res.data.error}")
 
             print(f"Dify API Response time for id {req.id}: {res.data.elapsed_time}", flush=True)
 

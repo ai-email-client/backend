@@ -5,8 +5,8 @@ from app.schemas.request import DataInsertSummaryRequest
 
 logger = logging.getLogger(__name__)
 
-WORKER_BATCH_SIZE  = 5
-BATCH_DELAY_SECONDS = 5
+WORKER_BATCH_SIZE  = 3
+BATCH_DELAY_SECONDS = 3
 
 _summary_queue: asyncio.Queue = asyncio.Queue()
 _queued_ids: set[str] = set()

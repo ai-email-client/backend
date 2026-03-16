@@ -47,7 +47,7 @@ class DifyAPI:
                 headers=headers,
                 json=payload,
                 verify=False,
-                timeout=(10, 500),
+                timeout=(1, 500),
             )
             response.raise_for_status()
             return DifySummaryResponse(**response.json())

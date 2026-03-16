@@ -14,7 +14,7 @@ class UserRequest(BaseModel):
 class DifySummaryRequest(BaseModel):
     sender: str
     msg_id: str
-    text_plain: str
+    text_plain: Optional[str] = ''
     email_tags: List[str]
 
 class DifySummaryBatchRequest(BaseModel):
