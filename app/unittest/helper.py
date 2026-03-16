@@ -1,6 +1,7 @@
 import pandas as pd
 import csv
 import os
+import re
 
 def load_test_cases(file_path: str) -> list[tuple]:
     
@@ -20,7 +21,7 @@ def save_result_to_csv(
         actual_sender_type, expected_sender_type,
         actual_email_category, expected_email_category,
         actual_spam, expected_spam,
-        result,status, remark=""
+        result,status, error_message="", remark=""
     ):
 
     file_name = 'test_results_report.csv'
@@ -36,12 +37,15 @@ def save_result_to_csv(
             'Actual sender_type', 'Expected sender_type', 
             'Actual email_category', 'Expected email_category', 
             'Actual Spam', 'Expected Spam', 
-            'Result', 'Status', 'Error Remark'])
+            'Result', 'Status','Error Message', 'Remark'])
         
         writer.writerow([
             tc_id, input_email, 
             actual_sender_type, expected_sender_type, 
             actual_email_category, expected_email_category, 
             actual_spam, expected_spam, 
-            result, status, remark
+            result, status, error_message, remark
         ])
+
+def strip_ansi(text: str) -> str:
+    return re.sub(r'\x1b\[[0-9;]*m', '', text)

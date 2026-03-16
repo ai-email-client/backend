@@ -41,7 +41,7 @@ class DifySummary(BaseModel):
     instructions: Optional[List[str]] = None
     required_items: Optional[List[str]] = None
     summary: Optional[str] = None
-    importance: Optional[Importance] = None
+    importance: Optional[Importance] | str = None
     is_spam: Optional[bool] = None
     is_threat: Optional[bool] = None
     spam_type: Optional[str] = None
@@ -54,32 +54,21 @@ class DifySummary(BaseModel):
     @field_validator("summary", "importance", mode="before")
     @classmethod
     def fix_duplicated_ai_fields(cls, data, info):
-        """
-        จัดการกรณีที่ AI ส่ง summary กับ importance เป็น string เดียวกัน เช่น:
-        "Summary: ...\n\nImportance: High\n\nReason: ..."
-        
-        - ถ้า field นี้คือ 'importance' และเป็น string → แยก level + reason ออกมา
-        - ถ้า field นี้คือ 'summary' และเป็น string → ตัดเฉพาะส่วน summary ออกมา
-        - ถ้าไม่ใช่ string (เป็น dict หรือ None แล้ว) → ปล่อยให้ BaseModel จัดการตามปกติ
-        """
+
         if not isinstance(data, str):
             return data
 
-        # ตรวจว่า string นี้มี pattern แบบ "Summary: ... Importance: ... Reason: ..."
-        # รองรับทั้ง plain text และ markdown bold (**Importance:**)
         has_summary_block    = re.search(r'(?:\*{0,2})Summary:(?:\*{0,2})', data, re.IGNORECASE)
         has_importance_block = re.search(r'(?:\*{0,2})Importance:(?:\*{0,2})', data, re.IGNORECASE)
 
-        # ถ้าไม่มี pattern นี้เลย → string ปกติ ปล่อยผ่าน
         if not has_summary_block and not has_importance_block:
             return data
 
-        field_name = info.field_name  # 'summary' หรือ 'importance'
+        field_name = info.field_name
 
         if field_name == "summary":
-            # ดึงเฉพาะเนื้อหาหลัง "Summary:" จนถึงบรรทัดว่างถัดไปหรือก่อน "Importance:"
             match = re.search(
-                r'(?:\*{0,2})Summary:(?:\*{0,2})\s*(.*?)(?=\n\s*\n\s*(?:\*{0,2})Importance:|$)',
+                r'(?:\*{0,2})Summary:(?:\*{0,2})\s*(.*?)(?=\n{1,2}\s*(?:\*{0,2})Importance:|$)',
                 data, re.DOTALL | re.IGNORECASE
             )
             return match.group(1).strip() if match else data
@@ -101,7 +90,6 @@ class DifySummary(BaseModel):
             if match_reason:
                 imp_dict['reason'] = match_reason.group(1).strip()
 
-            # ถ้า parse ไม่ได้เลย fallback เป็น None แทนที่จะคืน string ที่ผิด format
             return imp_dict if imp_dict else None
 
         return data

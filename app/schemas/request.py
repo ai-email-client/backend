@@ -11,22 +11,21 @@ class UserRequest(BaseModel):
     provider: str
 
 
-class DifySummaryBatchRequest(BaseModel):
-    ids: List[str]
-
-
 class DifySummaryRequest(BaseModel):
     sender: str
     msg_id: str
-    plain_text: str
+    text_plain: str
     email_tags: List[str]
 
+class DifySummaryBatchRequest(BaseModel):
+    emails: List[DifySummaryRequest]
 
 class DataInsertSummaryRequest(BaseModel):
     id: str
     sender: str
     msg_id: str
-    plain_text: str
+    text_plain: Optional[str] = None
+    text_html: Optional[str] = None
     email_tags: List[str]
     current_user: UserRequest
 

@@ -41,6 +41,30 @@ class SupabaseDB:
             return response.data
         except Exception as e:
             raise Exception(f"Select Error ({table}): {str(e)}")
+    def select_in(
+        self,
+        table: str,
+        columns: str = "*",
+        in_filter: Optional[Dict[str, List[Any]]] = None,
+        eq: Optional[Dict[str, Any]] = None,
+    ) -> List[Any]:
+        if not self.supabase:
+            raise Exception("Supabase client is not initialized")
+        try:
+            query = self.supabase.table(table).select(columns)
+
+            if eq:
+                for key, value in eq.items():
+                    query = query.eq(key, value)
+
+            if in_filter:
+                for key, values in in_filter.items():
+                    query = query.in_(key, values)
+
+            response = query.execute()
+            return response.data
+        except Exception as e:
+            raise Exception(f"SelectIn Error ({table}): {str(e)}")
 
     def insert(self, table: str, data: Dict[str, Any] | List[Dict[str, Any]]) -> List[Any]:
         if not self.supabase:

@@ -372,7 +372,7 @@ class GmailAPI:
             labels = results.get("labels", [])
             for label in labels:
                 if label.get("name").lower() == label_name.lower():
-                    return Category(**label)
+                    return label
             return None
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())

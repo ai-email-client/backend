@@ -1,5 +1,5 @@
-from typing import List
-from sqlalchemy import column
+import logging
+from typing import List, Optional
 from app.schemas.dify import Status
 from app.schemas.email import Sender
 from app.schemas.request import (
@@ -12,6 +12,9 @@ from app.schemas.response import (
 )
 from config import Config
 from database import SupabaseDB
+from app.utility import clean_content
+
+logger = logging.getLogger(__name__)
 
 class DatabaseService():
     def __init__(self, config: Config, db: SupabaseDB):
@@ -24,7 +27,7 @@ class DatabaseService():
         columns = [
                     "source_email_id","sender","email_category",
                     "date","time","location","instructions","required_items",
-                    "summary","is_spam","is_threat",
+                    "summary","importance","is_spam","is_threat",
                     "spam_type","spam_confidence",
                     "security_type","security_confidence",
                     "extraction_status","confidence"
@@ -46,7 +49,7 @@ class DatabaseService():
                         msg_id: str,
                         email_address: str
         ):
-        columns = [ "id","msg_id","plain_text","email_tags","status","user_email_address" ]
+        columns = [ "id","msg_id","text_plain","email_tags","status","user_email_address" ]
         columns_str = ', '.join(columns)
         
         res = self.db.select(
@@ -87,6 +90,60 @@ class DatabaseService():
             return overview_results
         return None
 
+    def get_source_email_with_summary(self, msg_id: str, user_email: str):
+        """ดึง source_email และ summary พร้อมกันใน 1 query (JOIN)"""
+        result = self.db.select(
+            table='source_emails',
+            columns='*, email_ai_analysis(*)',
+            eq={
+                'msg_id': msg_id,
+                'user_email_address': user_email
+            }
+        )
+
+        if not result:
+            return None, None
+
+        data = result[0]
+        summary = result[0]['email_ai_analysis']
+        source = SourceEmailResponse(**data)
+        summary_record = EmailAIAnalysisResponse(**summary[0]) if summary else None
+        return source, summary_record
+
+    def get_source_emails_with_summary_batch(
+        self, msg_ids: List[str], user_email: str
+    ) -> dict[str, tuple[SourceEmailResponse, Optional[EmailAIAnalysisResponse]]]:
+
+        rows = self.db.select_in(
+            table='source_emails',
+            columns='*, email_ai_analysis(*)',
+            in_filter={'msg_id': msg_ids},
+            eq={'user_email_address': user_email},
+        )
+
+        output = {}
+        for row in (rows or []):
+            summary_data = row.pop('email_ai_analysis', None)
+            if isinstance(summary_data, list):
+                summary_data = summary_data[0] if summary_data else None
+
+            try:
+                source = SourceEmailResponse(**row)
+            except Exception as e:
+                logger.warning(f"[Batch] SourceEmailResponse parse error: {e}")
+                continue
+
+            summary = None
+            if summary_data:
+                try:
+                    summary = EmailAIAnalysisResponse(**summary_data)
+                except Exception as e:
+                    logger.warning(f"[Batch] EmailAIAnalysisResponse parse error: {e}")
+
+            output[source.msg_id] = (source, summary)
+
+        return output
+
     def upsert_sender(self, source_email_id: str, sender: Sender):
         res = self.db.upsert(
             table='email_ai_analysis',
@@ -115,7 +172,7 @@ class DatabaseService():
     def insert_source_email(self, req: DifySummaryRequest, user_email: str):
         res = self.db.insert('source_emails', {
                 'msg_id': req.msg_id,
-                'plain_text': req.plain_text,
+                'text_plain': req.text_plain,
                 'email_tags': req.email_tags,
                 'status': Status.new.value,
                 'user_email_address': user_email,
@@ -128,11 +185,12 @@ class DatabaseService():
         return None
     
     def upsert_email_source(self, req: DifySummaryRequest, user_email: str):
+        text_plain = clean_content(req.text_plain)
         res = self.db.upsert(
             table='source_emails',
             data={
                 'msg_id': req.msg_id,
-                'plain_text': req.plain_text,
+                'text_plain': text_plain,
                 'email_tags': req.email_tags,
                 'status': Status.new.value,
                 'user_email_address': user_email,

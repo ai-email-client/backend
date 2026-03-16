@@ -167,7 +167,10 @@ class EmailService:
 
         return Category(**res)
 
-    def get_label_by_name(self, label_name: str, current_user: UserRequest):
+    def get_label_by_name(
+        self, label_name: str, 
+        current_user: UserRequest
+    ):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":

@@ -17,18 +17,14 @@ def clean_html(html_content: str) -> str:
         return ""
     try:
         soup = BeautifulSoup(html_content, "html.parser")
-
         for element in soup(["script", "style", "head", "meta", "noscript"]):
             element.extract()
-
         text = soup.get_text(separator="\n")
-
         lines = (line.strip() for line in text.splitlines())
-        clean_text = "\n".join(line for line in lines if line)
-        return clean_text
-
+        text = "\n".join(line for line in lines if line)
+        return clean_text(text)
     except Exception:
-        return html_content
+        return clean_text(html_content)
 
 
 def clean_text(text: str) -> str:
@@ -141,3 +137,11 @@ def parse_json_response(raw_json):
     except json.JSONDecodeError as e:
         print(f"Error parsing JSON: {e}")
         return None
+
+def is_html(text: str) -> bool:
+    return bool(re.search(r'<[a-zA-Z][^>]*>', text))
+
+def clean_content(text: str) -> str:
+    if not text or not text.strip():
+        return ''
+    return clean_html(text) if is_html(text) else clean_text(text)

@@ -1,189 +1,86 @@
 import requests
 import json
 import urllib3
-from typing import List
+import logging
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from app.schemas.request import (
-    OverviewRequest, WritterRequest
-)
-from app.utility import clean_text
+from app.schemas.request import OverviewRequest, WritterRequest
 from config import Config
-from app.schemas.response import (
-    DifySummaryResponse, OverviewResponse
-)
+from app.schemas.response import DifySummaryResponse, OverviewResponse
 
+logger = logging.getLogger(__name__)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-dify_session = requests.Session()
-retry_strategy = Retry(
-    total=3,
-    backoff_factor=1,
-    status_forcelist=[429, 500, 502, 503, 504],
-)
-adapter = HTTPAdapter(max_retries=retry_strategy)
-dify_session.mount("http://", adapter)
-dify_session.mount("https://", adapter)
 
-class DifyAPI():
+def _log_response(response: requests.Response, *args, **kwargs):
+    retry_count = response.request.headers.get("X-Retry-Count", 0)
+    status = "✓" if response.ok else "✗"
+    log_fn = logger.info if response.ok else logger.warning
+    log_fn(
+        f"[Dify] {status} {response.request.method} {response.url} "
+        f"→ {response.status_code} (attempt {int(retry_count) + 1})"
+    )
+
+dify_session = requests.Session()
+dify_session.mount("http://",  HTTPAdapter(max_retries=Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])))
+dify_session.mount("https://", HTTPAdapter(max_retries=Retry(total=3, backoff_factor=1, status_forcelist=[429, 500, 502, 503, 504])))
+dify_session.hooks["response"].append(_log_response)
+
+
+class DifyAPI:
     def __init__(self, config: Config):
         self.config = config
-    
-    def get_summary(self, plain_text: str):
+
+    def _post(self, api_key: str, payload: dict) -> DifySummaryResponse | None:
         url = self.config.DIFY_URL
         if not url:
-            raise Exception("Dify URL is not configured")
-            
-        payload = {
-            "inputs": {
-                "email_text": clean_text(plain_text)[:4000],
-            },
-            "response_mode": "blocking",
-            "user": "frontend-test"
-        }
-        
-        headers = {
-            "Authorization": f"Bearer {self.config.DIFY_SUMMARY}",
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true"
-        }
-        
-        try:
-            
-            response = dify_session.post(
-                url=url,
-                headers=headers,
-                json=payload,
-                verify=False,      
-                timeout=(10, 500)
-            )
-            
-            response.raise_for_status()
-            
-            return DifySummaryResponse(**response.json())
-
-        except Exception as e:
-            print(f"Error in DifyAPI.get_summary: {e}")
-            return None
-
-    async def get_summary(self, plain_text: str):
-        url = self.config.DIFY_URL
-        if not url:
-            raise Exception("Dify URL is not configured")
-            
-        payload = {
-            "inputs": {
-                "email_text": clean_text(plain_text)[:4000],
-            },
-            "response_mode": "blocking",
-            "user": "frontend-test"
-        }
-        
-        headers = {
-            "Authorization": f"Bearer {self.config.DIFY_SUMMARY}",
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true"
-        }
-        
-        try:
-            
-            response = dify_session.post(
-                url=url,
-                headers=headers,
-                json=payload,
-                verify=False,      
-                timeout=(10, 500)
-            )
-            
-            response.raise_for_status()
-            
-            return DifySummaryResponse(**response.json())
-
-        except Exception as e:
-            print(f"Error in DifyAPI.get_summary: {e}")
-            return None
-
-    def get_writter(self, req: WritterRequest):
-        url = self.config.DIFY_URL
-        print(f"req: {req}", flush=True)
-        if not url:
-            raise Exception("Dify URL is not configured")
+            raise ValueError("Dify URL is not configured")
 
         headers = {
-            "Authorization": f"Bearer {self.config.DIFY_WRITER}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true"
+            "ngrok-skip-browser-warning": "true",
         }
-        inputs_data = json.loads(req.model_dump_json())
-        payload = {
-            "inputs": inputs_data,
-            "response_mode": "blocking",
-            "user": "frontend-test"
-        }
-        
         try:
             response = dify_session.post(
                 url=url,
                 headers=headers,
                 json=payload,
-                verify=False,      
-                timeout=(10, 500)
+                verify=False,
+                timeout=(10, 500),
             )
-            
             response.raise_for_status()
-            
-            result_data = response.json() 
-            
-            return DifySummaryResponse(**result_data)
-
-        except Exception as e:
-            print(f"Error in DifyAPI.get_writter: {e}")
-            return {"error": str(e), "status": "failed"}
-
-    def get_overview(self, req: OverviewRequest):
-        url = self.config.DIFY_URL
-        if not url:
-            raise Exception("Dify URL is not configured")
-
-        headers = {
-            "Authorization": f"Bearer {self.config.DIFY_OVERVIEW}",
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true"
-        }
-
-        payload = {
-            "inputs": {
-                **req.model_dump()
-            },
-            "response_mode": "blocking",
-            "user": "frontend-test"
-        }
-        
-        try:
-            session = requests.Session()
-            
-            retry_strategy = Retry(
-                total=3,
-                backoff_factor=1,
-                status_forcelist=[429, 500, 502, 503, 504],
-            )
-            
-            adapter = HTTPAdapter(max_retries=retry_strategy)
-            session.mount("http://", adapter)
-            session.mount("https://", adapter)
-            
-            response = session.post(
-                url=url,
-                headers=headers,
-                json=payload,
-                verify=False,      
-                timeout=(10, 500)
-            )
-            
-            response.raise_for_status()
-            
             return DifySummaryResponse(**response.json())
-
         except Exception as e:
-            print(f"Error in DifyAPI.get_overview: {e}")
+            logger.error(f"[Dify] Request failed: {e}")
             return None
+
+    def _summary_payload(self, plain_text: str) -> dict:
+        return {
+            "inputs": {"email_text": plain_text[:4000]},
+            "response_mode": "blocking",
+            "user": "frontend-test",
+        }
+
+    def get_summary(self, plain_text: str) -> DifySummaryResponse | None:
+        return self._post(self.config.DIFY_SUMMARY, self._summary_payload(plain_text))
+
+    def test_summary(self, plain_text: str) -> DifySummaryResponse | None:
+        return self._post(self.config.DIFY_SUMMARY, self._summary_payload(plain_text))
+
+    def get_writter(self, req: WritterRequest) -> DifySummaryResponse | dict:
+        payload = {
+            "inputs": json.loads(req.model_dump_json()),
+            "response_mode": "blocking",
+            "user": "frontend-test",
+        }
+        result = self._post(self.config.DIFY_WRITER, payload)
+        return result or {"error": "Request failed", "status": "failed"}
+
+    def get_overview(self, req: OverviewRequest) -> DifySummaryResponse | None:
+        payload = {
+            "inputs": req.model_dump(),
+            "response_mode": "blocking",
+            "user": "frontend-test",
+        }
+        return self._post(self.config.DIFY_OVERVIEW, payload)

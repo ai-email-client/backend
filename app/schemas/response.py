@@ -1,8 +1,9 @@
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
-from app.schemas.dify import DifySummary, DifyDraft
-from app.schemas.email import Attachment, Draft, Message, Sender, MessageGmail
+from app.schemas.dify import DifySummary
+from app.schemas.email import Attachment, Draft, Message, Sender
 from app.schemas.category import Category
+from app.schemas.dify import Importance
 
 
 class MessagesResponse(BaseModel):
@@ -14,7 +15,7 @@ class MessagesResponse(BaseModel):
 class SourceEmailResponse(BaseModel):
     id: str
     msg_id: str
-    plain_text: str
+    text_plain: str
     email_tags: List[str]
     status: str
     user_email_address: str
@@ -30,6 +31,7 @@ class EmailAIAnalysisResponse(BaseModel):
     instructions: Optional[List[str]] = None
     required_items: Optional[List[str]] = None
     summary: Optional[str] = None
+    importance: Optional[Importance] = None
     is_spam: Optional[bool] = None
     is_threat: Optional[bool] = None
     spam_type: Optional[str] = None
