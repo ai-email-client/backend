@@ -96,3 +96,18 @@ async def check_summary(
     except Exception as e:
         
         return HTTPException(status_code=500, detail=str(e))
+
+@router.get("/overview")
+async def get_overview(
+    current_user: UserRequest = Depends(get_current_user), 
+    service: DatabaseService = Depends(get_database_service)
+):
+    try:
+        res = service.get_overview(current_user.email_address)
+        if res is None:
+            raise HTTPException(status_code=404, detail="Overview not found for user")
+
+        return res
+    except Exception as e:
+        
+        return HTTPException(status_code=500, detail=str(e))

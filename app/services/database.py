@@ -69,29 +69,36 @@ class DatabaseService():
             "source_email_id",
             "sender",
             "email_category",
-            "summary"
+            "summary",
+            "importance",
         ]
         columns_str = ', '.join(columns)
 
         res = self.db.select(
             table='email_ai_analysis',
-            columns=f"{columns_str}, source_emails!inner(user_email_address)",
+            columns=f"{columns_str}, source_emails!inner(msg_id, user_email_address, email_tags)",
             eq={
                 'source_emails.user_email_address': email_address
-            },
-            contains={
-                'source_emails.email_tags': ['UNREAD']
             }
         )
-        if res and len(res) > 0:
-            overview_results = []
-            for r in res:
-                overview_results.append(OverviewResponse(**r))
-            return overview_results
-        return None
+
+        if not res:
+            return None
+
+        overview_results = []
+        for r in res:
+            source = r.pop('source_emails', {}) or {}
+
+            email_tags = source.get('email_tags', [])
+            if 'UNREAD' not in email_tags:
+                continue
+
+            r['msg_id'] = source.get('msg_id')
+            overview_results.append(OverviewResponse(**r))
+
+        return overview_results if overview_results else None
 
     def get_source_email_with_summary(self, msg_id: str, user_email: str):
-        """ดึง source_email และ summary พร้อมกันใน 1 query (JOIN)"""
         result = self.db.select(
             table='source_emails',
             columns='*, email_ai_analysis(*)',

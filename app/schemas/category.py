@@ -106,4 +106,25 @@ INITIAL_LABELS = {
         "type": "user",
         "color": {"textColor": Color.BLACK, "backgroundColor": Color.WHITE},
     },
+    # "phishing": {
+    #     "name": "phishing",
+    #     "messageListVisibility": MessageListVisibility.SHOW,
+    #     "labelListVisibility": LabelListVisibility.SHOW,
+    #     "type": "user",
+    #     "color": {"textColor": Color.RED_DEEP, "backgroundColor": Color.RED_SALMON},
+    # },
+    # "promotional": {
+    #     "name": "promotional",
+    #     "messageListVisibility": MessageListVisibility.SHOW,
+    #     "labelListVisibility": LabelListVisibility.SHOW,
+    #     "type": "user",
+    #     "color": {"textColor": Color.ORANGE_BRIGHT, "backgroundColor": Color.ORANGE_PASTEL},
+    # },
+    # "bulk": {
+    #     "name": "bulk",
+    #     "messageListVisibility": MessageListVisibility.SHOW,
+    #     "labelListVisibility": LabelListVisibility.SHOW,
+    #     "type": "user",
+    #     "color": {"textColor": Color.ORANGE_BRIGHT, "backgroundColor": Color.ORANGE_PASTEL},
+    # },
 }

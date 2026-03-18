@@ -208,3 +208,5 @@ __marimo__/
 
 # Unit Test
 app/unittest/*.csv
+
+.env.production

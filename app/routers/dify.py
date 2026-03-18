@@ -133,15 +133,24 @@ async def set_summary_batch(
 
                 if summary_record:
                     if status == Status.done.value:
-                        if summary_record.email_category:
-                            label = email_service.get_label_by_name(
-                                summary_record.email_category, current_user
-                            )
-                            if label and label.id and label.id not in email_req.email_tags:
+                        if summary_record.email_category or summary_record.is_spam:
+                            label_ids = []
+
+                            if summary_record.email_category:
+                                label = email_service.get_label_by_name(
+                                    summary_record.email_category, current_user
+                                )
+                                if label and label.id and label.id not in email_req.email_tags:
+                                    label_ids.append(label.id)
+
+                            if summary_record.is_spam:
+                                label_ids.append("SPAM")
+
+                            if label_ids:
                                 background_tasks.add_task(
                                     email_service.update_message_labels,
                                     msg_id=source_email.msg_id,
-                                    addLabelIds=[label.id],
+                                    addLabelIds=label_ids,
                                     current_user=current_user,
                                 )
                         if summary_record.sender is not None:

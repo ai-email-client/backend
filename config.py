@@ -11,8 +11,6 @@ class Config:
         self.GOOGLE_AUTH_URI = os.getenv("GOOGLE_AUTH_URI")
         self.GOOGLE_TOKEN_URI = os.getenv("GOOGLE_TOKEN_URI")
         
-        self.FRONTEND_API_URL = os.getenv("FRONTEND_API_URL")
-
         self.SUPABASE_URL = os.getenv("SUPABASE_URL")
         self.SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
@@ -23,3 +21,8 @@ class Config:
 
         self.SECRET_KEY = os.getenv("SECRET_KEY")
         self.ALGORITHM = os.getenv("ALGORITHM")
+
+        self.FRONTEND_URL = os.getenv("FRONTEND_URL")
+
+        # self.BACKEND_PORT = int(os.getenv("BACKEND_PORT", 8000))
+        # self.FRONTEND_PORT = int(os.getenv("FRONTEND_PORT", 3000))

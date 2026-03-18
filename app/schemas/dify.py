@@ -63,13 +63,18 @@ class DifySummary(BaseModel):
             return data
 
         field_name = info.field_name
-
         if field_name == "summary":
+            data = re.sub(r'^(?:\*{0,2})Summary:(?:\*{0,2})\s*', '', data, flags=re.IGNORECASE).strip()
+
             match = re.search(
-                r'^(.*?)(?=\n+\s*(?:\*{0,2})Importance:(?:\*{0,2}))',
+                r'^(.*?)(?=\n{1,2}\s*(?:\*{0,2})Importance:(?:\*{0,2}))',
                 data, re.DOTALL | re.IGNORECASE
             )
-            return match.group(1).strip() if match else data
+            result = match.group(1).strip() if match else data
+
+            result = re.sub(r'\n{2,}', '\n', result)
+            result = re.sub(r'[ \t]+', ' ', result)
+            return result.strip()
 
         if field_name == "importance":
             imp_dict = {}

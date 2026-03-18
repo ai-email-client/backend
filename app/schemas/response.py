@@ -1,5 +1,6 @@
+import json
+from pydantic import BaseModel, field_validator
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel
 from app.schemas.dify import DifySummary
 from app.schemas.email import Attachment, Draft, Message, Sender
 from app.schemas.category import Category
@@ -43,10 +44,12 @@ class EmailAIAnalysisResponse(BaseModel):
 
 
 class OverviewResponse(BaseModel):
-    source_email_id: str
-    sender: Sender
+    msg_id:         str
+    source_email_id:str
+    sender:         Sender
     email_category: str
-    summary: str
+    summary:        str
+    importance:     Importance
 
 
 class CredentialResponse(BaseModel):
@@ -63,6 +66,15 @@ class DifyOutputs(BaseModel):
     clean_email: Optional[DifySummary] = None
     result: Optional[str] = ""
 
+    @field_validator("clean_email", mode="before")
+    @classmethod
+    def parse_clean_email(cls, v):
+        if isinstance(v, str):
+            try:
+                v = json.loads(v)
+            except Exception:
+                return None
+        return v
 
 class DifyDataResponse(BaseModel):
     id: str

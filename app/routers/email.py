@@ -204,7 +204,7 @@ async def delete_message(
         return HTTPException(status_code=status_code, detail=detail)
 
 
-@router.post("/message/batch_delete")
+@router.delete("/message/batch")
 async def batch_delete_message(
     req: MessageBatchDeleteRequest,
     current_user: UserRequest = Depends(get_current_user),

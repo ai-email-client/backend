@@ -140,7 +140,9 @@ class EmailService:
 
         return res
 
-    def sync_labels(self, current_user: UserRequest):
+    def sync_labels(
+        self, current_user: UserRequest
+    ):
         if current_user.provider == "gmail":
             provider_service = GmailAPI(self.config)
         elif current_user.provider == "outlook":

@@ -50,7 +50,7 @@ class AuthService:
 
         token = jwt_encode(payload, self.config.SECRET_KEY)
 
-        url = f"{self.config.FRONTEND_API_URL}/#/callback?token={token}"
+        url = f"{self.config.FRONTEND_URL}/#/callback?token={token}"
 
         return url
 
