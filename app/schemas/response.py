@@ -51,6 +51,18 @@ class OverviewResponse(BaseModel):
     summary:        str
     importance:     Importance
 
+class SpamResponse(BaseModel):
+    msg_id: str
+    source_email_id: str
+    sender: Sender
+    summary: str
+    is_spam: bool
+    is_threat: bool
+    spam_type: str
+    spam_confidence: float
+    security_type: str
+    security_confidence: float
+
 
 class CredentialResponse(BaseModel):
     access_token: str

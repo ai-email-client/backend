@@ -7,6 +7,7 @@ from app.schemas.request import (
 )
 from app.schemas.response import (
     OverviewResponse,
+    SpamResponse,
     SourceEmailResponse, 
     EmailAIAnalysisResponse
 )
@@ -97,6 +98,40 @@ class DatabaseService():
             overview_results.append(OverviewResponse(**r))
 
         return overview_results if overview_results else None
+    
+    def get_spam(self, email_address: str):
+        columns = [
+            "source_email_id",
+            "sender",
+            "summary",
+            "is_spam",
+            "is_threat",
+            "spam_type",
+            "spam_confidence",
+            "security_type",
+            "security_confidence"
+        ]
+        columns_str = ', '.join(columns)
+
+        res = self.db.select(
+            table='email_ai_analysis',
+            columns=f"{columns_str}, source_emails!inner(msg_id, user_email_address)",
+            eq={
+                'source_emails.user_email_address': email_address,
+                'is_spam': True
+            }
+        )
+
+        if not res:
+            return None
+
+        spam_results = []
+        for r in res:
+            source = r.pop('source_emails', {}) or {}
+            r['msg_id'] = source.get('msg_id') 
+            spam_results.append(SpamResponse(**r))
+
+        return spam_results if spam_results else None
 
     def get_source_email_with_summary(self, msg_id: str, user_email: str):
         result = self.db.select(
