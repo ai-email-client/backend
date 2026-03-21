@@ -255,7 +255,7 @@ async def create_draft(
     current_user: UserRequest = Depends(get_current_user),
     email_service: EmailService = Depends(get_email_service),
 ):
-    try:
+    try: 
         res = email_service.create_draft(req, current_user)
         return res
     except Exception as e:

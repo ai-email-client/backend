@@ -1,3 +1,4 @@
+from email.message import Message
 from typing import List, Optional, Dict
 from pydantic import BaseModel
 from app.schemas.category import Category
@@ -87,14 +88,16 @@ class WritterRequest(BaseModel):
     target_person: Optional[str] = None
 
 
+
 class CreateDraftRequest(BaseModel):
-    to: str
-    cc: Optional[str] = ""
-    bcc: Optional[str] = ""
-    subject: str
-    content: Optional[Dict[str, str]] = None
+    to: Optional[List[str]] = None
+    cc: Optional[List[str]] = None
+    bcc: Optional[List[str]] = None
+    subject: Optional[str] = None
+    content: Optional[str] = None
+    content_type: Optional[str] = None
+    attachments: Optional[List[Attachment]] = None
     threadId: Optional[str] = None
     in_reply_to: Optional[str] = None
     references: Optional[str] = None
-    action: Optional[str] = "new"
-    attachments: Optional[List[Attachment]] = []
+    # message: Optional[Message] = None

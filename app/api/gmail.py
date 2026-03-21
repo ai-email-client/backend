@@ -15,7 +15,7 @@ from pyparsing import results
 
 from app.schemas.email import Draft, Format, MessageGmail,Attachment
 from config import Config
-from app import utility
+from app import email_parser, utility
 from database import SupabaseDB
 
 from app.schemas.request import (
@@ -527,21 +527,28 @@ class GmailAPI:
             service = self.build_service(credentials)
             message = EmailMessage()
 
-            message["To"] = req.to
-            message["From"] = current_user.email_address
-            message["Subject"] = req.subject
-            if req.cc:
-                message["Cc"] = req.cc
-            if req.bcc:
-                message["Bcc"] = req.bcc
-            message.set_content(req.content)
+            print("Recipients:", req.to)
+            message["To"] = ", ".join(req.to)
 
-            encoded_message = utility.encode_base64(message.as_bytes())
-            if req.message is not None:
+            message["From"] = current_user.email_address
+
+            message["Subject"] = req.subject
+
+            if req.cc and len(req.cc) > 0:
+                cc_recipients = req.cc
+                message["Cc"] = ", ".join(cc_recipients)
+            if req.bcc and len(req.bcc) > 0:
+                bcc_recipients = req.bcc
+                message["Bcc"] = ", ".join(bcc_recipients)
+            print(req.content_type)
+            message.set_content(req.content, subtype=req.content_type)
+
+            encoded_message = email_parser.encode_base64_bytes(message.as_bytes())
+            if req.threadId is not None:
                 create_message = {
                     "message": {
                         "raw": encoded_message,
-                        'threadId': req.message.threadId
+                        'threadId': req.threadId
                     }
                 }
             else:
