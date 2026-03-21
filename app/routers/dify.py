@@ -66,7 +66,7 @@ async def set_summary(
                             source_email_id=source_email.id,
                             sender=Sender(name=req.sender, type=summary_record.sender.type),
                         )
-                    return summary_record
+                    return {"status": "done", "msg_id": req.msg_id, **summary_record.model_dump()}
 
                 elif status == Status.processing.value:
                     if not is_queued(str(source_email.id)):
