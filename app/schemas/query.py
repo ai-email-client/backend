@@ -69,3 +69,10 @@ class AuthQueryParams:
     ):
         self.state = state
         self.code = code
+
+class LoginQueryParams:
+    def __init__(
+        self,
+        redirect_uri: str = Query(default=None),
+    ):
+        self.redirect_uri = redirect_uri

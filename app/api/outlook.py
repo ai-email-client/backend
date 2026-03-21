@@ -39,10 +39,10 @@ class OutlookAPI:
     ):
         pass
 
-    def get_authorization_url(self):
+    def get_authorization_url(self, origin: str = "web"):
         return ""
 
-    def get_credentials(self, authorization_code: str, state: str, db: SupabaseDB):
+    def get_credentials(self, authorization_code: str, state: str, provider: str, origin: str, db: SupabaseDB):
         pass
 
     def get_stored_credentials(self, email_address: str, db: SupabaseDB):

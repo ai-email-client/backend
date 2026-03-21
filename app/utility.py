@@ -145,3 +145,11 @@ def clean_content(text: str) -> str:
     if not text or not text.strip():
         return ''
     return clean_html(text) if is_html(text) else clean_text(text)
+
+def encode_state(origin: str, oauth_state: str) -> str:
+    payload = json.dumps({"origin": origin, "state": oauth_state})
+    return base64.urlsafe_b64encode(payload.encode()).decode()
+ 
+def decode_state(encoded: str) -> dict:
+    payload = base64.urlsafe_b64decode(encoded.encode()).decode()
+    return json.loads(payload)

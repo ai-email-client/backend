@@ -97,7 +97,7 @@ class GmailAPI:
 
         return user_info
 
-    def exchange_code(self, authorization_code: str, state: str = ""):
+    def exchange_code(self, authorization_code: str, state: str = "", provider: str = "gmail", origin: str = "web"):
         """Exchange an authorization code for OAuth 2.0 credentials.
 
         Args:
@@ -113,7 +113,7 @@ class GmailAPI:
         flow = Flow.from_client_config(
             self.client_config, " ".join(self.scopes), state=state
         )
-        flow.redirect_uri = self.config.GOOGLE_REDIRECT_URI
+        flow.redirect_uri = f"{self.config.GOOGLE_REDIRECT_URI}/{provider}/{origin}".strip()
         try:
             credentials = flow.fetch_token(code=authorization_code)
             return credentials
@@ -140,13 +140,13 @@ class GmailAPI:
             logging.error("An error occurred: %s", e)
         return user_info
 
-    def get_authorization_url(self):
+    def get_authorization_url(self, origin: str = "web", provider: str = "gmail"):
         """Retrieve the authorization URL.
         Returns:
             Authorization URL to redirect the user to.
         """
         flow = Flow.from_client_config(self.client_config, " ".join(self.scopes))
-        flow.redirect_uri = self.config.GOOGLE_REDIRECT_URI
+        flow.redirect_uri = f"{self.config.GOOGLE_REDIRECT_URI}/{provider}/{origin}".strip()
         flow.autogenerate_code_verifier = False
         url, state = flow.authorization_url(
             include_granted_scopes="true",
@@ -154,7 +154,7 @@ class GmailAPI:
 
         return url, state
 
-    def get_credentials(self, authorization_code: str, state: str, db: SupabaseDB):
+    def get_credentials(self, authorization_code: str, state: str, provider: str, origin: str, db: SupabaseDB):
         """Retrieve credentials using the provided authorization code.
 
         This function exchanges the authorization code for an access token and queries
@@ -172,7 +172,7 @@ class GmailAPI:
             refresh token.
         """
         try:
-            credentials = self.exchange_code(authorization_code, state)
+            credentials = self.exchange_code(authorization_code, state, provider, origin)
             user_info = self.get_user_info(credentials)
             if credentials.get("refresh_token") is not None:
                 return self.store_credentials(

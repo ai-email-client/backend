@@ -6,6 +6,9 @@ from app.schemas.email import Attachment, Draft, Message, Sender
 from app.schemas.category import Category
 from app.schemas.dify import Importance
 
+class LoginResponse(BaseModel):
+    url: str
+    state: str
 
 class MessagesResponse(BaseModel):
     messages: List[Message] = []

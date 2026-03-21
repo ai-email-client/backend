@@ -5,7 +5,8 @@ from app.api.gmail import GmailAPI
 from app.api.outlook import OutlookAPI
 from typing import Dict, Any
 from fastapi import HTTPException
-from app.utility import jwt_encode
+from app.utility import jwt_encode, jwt_decode
+from app.schemas.response import LoginResponse
 
 
 class AuthService:
@@ -13,7 +14,7 @@ class AuthService:
         self.config = config
         self.db = db
 
-    def get_authorization_url(self, provider: str):
+    def get_authorization_url(self, provider: str, origin: str = "web"):
         if provider == "gmail":
             provider_service = GmailAPI(self.config)
         elif provider == "outlook":
@@ -21,11 +22,11 @@ class AuthService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
-        res = provider_service.get_authorization_url()
+        res = provider_service.get_authorization_url(origin, provider)
 
-        return res
+        return LoginResponse(url=res[0], state=res[1])
 
-    def handle_oauth_callback(self, provider: str, code: str, state: str):
+    def handle_oauth_callback(self, provider: str, code: str, state: str, origin: str = "web"):
         if provider == "gmail":
             provider_service = GmailAPI(self.config)
         elif provider == "outlook":
@@ -33,7 +34,7 @@ class AuthService:
         else:
             raise HTTPException(status_code=400, detail="Invalid provider")
 
-        creds = provider_service.get_credentials(code, state, self.db)
+        creds = provider_service.get_credentials(code, state, provider, origin, self.db)
         if creds is None:
             raise HTTPException(status_code=404, detail="Credentials not found")
         user_info = provider_service.get_user_info(creds)
@@ -50,9 +51,7 @@ class AuthService:
 
         token = jwt_encode(payload, self.config.SECRET_KEY)
 
-        url = f"{self.config.FRONTEND_URL}/#/callback?token={token}"
-
-        return url
+        return token
 
     def get_user_info(self, provider: str, creds: Dict[str, Any]):
         if provider == "gmail":
