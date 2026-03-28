@@ -11,7 +11,7 @@ This project aims to develop an intelligent email management assistant system to
 
    Open the terminal and navigate to the directory where you want to clone the repository, then run:
    ```
-   git clone https://github.com/yourusername/ai-email-client.git
+   git clone https://github.com/ai-email-client/backend.git
    ```
 2. Install the required packages
 
