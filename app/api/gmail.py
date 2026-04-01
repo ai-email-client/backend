@@ -1,53 +1,27 @@
-from typing import List, Dict, Any
-from unittest import result
 from fastapi import HTTPException
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
-from google.auth.transport import requests
-from google.oauth2 import id_token
 from googleapiclient import errors as google_api_errors
 from email.message import EmailMessage
 
 import logging
-from pyparsing import results
-
-
-from app.schemas.email import Draft, Format, MessageGmail,Attachment
 from config import Config
 from app import email_parser, utility
 from database import SupabaseDB
 
 from app.schemas.request import (
-    EmailFetchRequest,
-    MessageIdRequest,
     MessageBatchDeleteRequest,
     UserRequest,
     CreateLabelRequest,
     MessageModifyLabelRequest,
     MessageBatchModifyLabelRequest,
-    SyncLabelsRequest,
     CreateDraftRequest,
-)
-
-from app.schemas.response import (
-    CredentialResponse,
-    DraftsResposnse,
-    EmailDetailResponse,
-    EmailShortResponse,
-    EmailFetchResponse,
-    EmailPlainResponse,
-    EmailFetchPlainResponse,
-    CategoryListResponse,
-    MessagesResponse,
 )
 
 from app.schemas.category import (
     Category,
-    MessageListVisibility,
-    LabelListVisibility,
-    CategoryType,
-    CategoryColor,
+
 )
 from app.schemas.query import DraftsQueryParams, MessageParam, MessagesParam
 
@@ -527,7 +501,6 @@ class GmailAPI:
             service = self.build_service(credentials)
             message = EmailMessage()
 
-            print("Recipients:", req.to)
             message["To"] = ", ".join(req.to)
 
             message["From"] = current_user.email_address
@@ -540,8 +513,24 @@ class GmailAPI:
             if req.bcc and len(req.bcc) > 0:
                 bcc_recipients = req.bcc
                 message["Bcc"] = ", ".join(bcc_recipients)
-            print(req.content_type)
             message.set_content(req.content, subtype=req.content_type)
+            
+            if req.attachments:
+                for att in req.attachments:
+                    if att.data:
+                        file_data = email_parser.decode_base64(att.data)
+                        
+                        if '/' in att.mimeType:
+                            m_type, s_type = att.mimeType.split('/', 1)
+                        else:
+                            m_type, s_type = 'application', 'octet-stream'
+
+                        message.add_attachment(
+                            file_data,
+                            maintype=m_type,
+                            subtype=s_type,
+                            filename=att.filename
+                        )
 
             encoded_message = email_parser.encode_base64_bytes(message.as_bytes())
             if req.threadId is not None:
@@ -556,7 +545,7 @@ class GmailAPI:
                     "message": {
                         "raw": encoded_message,
                     }
-                    }
+                }
 
             results = (
                 service.users()
@@ -564,7 +553,6 @@ class GmailAPI:
                 .create(userId="me", body=create_message)
                 .execute()
             )
-            print("Results:", results)
             return results
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())
@@ -654,52 +642,62 @@ class GmailAPI:
         db: SupabaseDB,
     ):
         try:
-                credentials = self.get_stored_credentials(current_user.email_address, db)
-                service = self.build_service(credentials)
+            credentials = self.get_stored_credentials(current_user.email_address, db)
+            service = self.build_service(credentials)
+            message = EmailMessage()
                                 
-                message = EmailMessage()
-                message["To"] = req.to
-                message["Cc"] = req.cc
-                message["Bcc"] = req.bcc
-                message["From"] = current_user.email_address
-                message["Subject"] = req.subject
-                
-                message.set_content(req.content)
-                if req.attachments:
-                    for att in req.attachments:
-                        if att.data:
-                            file_data = utility.decode_base64(att.data)
-                            
-                            if '/' in att.mimeType:
-                                m_type, s_type = att.mimeType.split('/', 1)
-                            else:
-                                m_type, s_type = 'application', 'octet-stream'
+            message["To"] = ", ".join(req.to)
+            message["From"] = current_user.email_address
+            message["Subject"] = req.subject
 
-                            message.add_attachment(
-                                file_data,
-                                maintype=m_type,
-                                subtype=s_type,
-                                filename=att.filename
-                            )
+            if req.cc and len(req.cc) > 0:
+                cc_recipients = req.cc
+                message["Cc"] = ", ".join(cc_recipients)
+            if req.bcc and len(req.bcc) > 0:
+                bcc_recipients = req.bcc
+                message["Bcc"] = ", ".join(bcc_recipients)
+            message.set_content(req.content, subtype=req.content_type)
+            
+            if req.attachments:
+                for att in req.attachments:
+                    if att.data:
+                        file_data = email_parser.decode_base64(att.data)
+                        
+                        if '/' in att.mimeType:
+                            m_type, s_type = att.mimeType.split('/', 1)
+                        else:
+                            m_type, s_type = 'application', 'octet-stream'
 
-                raw_bytes = message.as_bytes()
-                encoded_message = utility.encode_base64_bytes(raw_bytes)
-                
-                update_body = {"message": 
-                    {
+                        message.add_attachment(
+                            file_data,
+                            maintype=m_type,
+                            subtype=s_type,
+                            filename=att.filename
+                        )
+
+            encoded_message = email_parser.encode_base64_bytes(message.as_bytes())
+            if req.threadId is not None:
+                create_message = {
+                    "message": {
                         "raw": encoded_message,
                         'threadId': req.threadId
                     }
                 }
+            else:
+                create_message = {
+                    "message": {
+                        "raw": encoded_message,
+                    }
+                }
 
-                results = (
-                    service.users()
-                    .drafts()
-                    .update(userId="me", id=draft_id, body=update_body)
-                    .execute()
-                )
+            results = (
+                service.users()
+                .drafts()
+                .update(userId="me", id=draft_id, body=create_message)
+                .execute()
+            )
                 
-                return results
+            return results
         except google_api_errors.HttpError as e:
             raise HTTPException(status_code=e.status_code, detail=e._get_reason())
 

@@ -405,8 +405,6 @@ class EmailService:
         if res is None:
             raise HTTPException(status_code=400, detail=f"Error updating draft :{res}")
 
-        print(res)
-
         return Draft(**res)
 
     def upload_draft(

@@ -120,6 +120,13 @@ class DifyService():
     
     def send_to_writter(self, req: WritterRequest):
         dify_api = DifyAPI(self.config)
+        req = WritterRequest(
+            email_text=clean_content(req.email_text),
+            ai_summary=clean_content(req.ai_summary),
+            user_draft=clean_content(req.user_draft),
+            topic=clean_content(req.topic),
+            target_person=clean_content(req.target_person)
+        )
         try:
             res = dify_api.get_writter(req)
             return DifyDraft(**parse_json_response(res.data.outputs.result))
