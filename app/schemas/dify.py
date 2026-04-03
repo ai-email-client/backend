@@ -93,7 +93,7 @@ class DifySummary(BaseModel):
             if match_reason:
                 imp_dict['reason'] = match_reason.group(1).strip()
 
-            return imp_dict if imp_dict else None
+            return imp_dict if imp_dict else ""
 
         return data
 

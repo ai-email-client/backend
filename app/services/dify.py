@@ -37,6 +37,8 @@ class DifyService():
         try:
             dify_api = DifyAPI(self.config)
             text = clean_content(req.text_plain)
+            # if text is None or text == "":
+            #     text = "No content"
 
             res = dify_api.get_summary(text)
 
@@ -105,15 +107,16 @@ class DifyService():
             )
             raise
 
-    async def test_summary(self, plain_text: str):
-        try:
-            print(f"Starting Test Dify API request.", flush=True)
-            dify_api = DifyAPI(self.config)
-            res = await dify_api.test_summary(plain_text)
-            
-            return res
-        except Exception as e:
-            print(f"Exception for plain_text: {str(e)}", flush=True)
+    async def test_to_summary(self, plain_text: str):
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._test_to_summary_sync, plain_text)
+
+    def _test_to_summary_sync(self, plain_text: str):
+        print(f"Starting Test Dify API request.", flush=True)
+        dify_api = DifyAPI(self.config)
+        res = dify_api.get_summary(plain_text)
+        
+        return res
 
     def send_to_overview(self, req: List[OverviewResponse]):
         dify_api = DifyAPI(self.config)
