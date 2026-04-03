@@ -60,6 +60,13 @@ async def set_summary(
                                 addLabelIds=[label.id],
                                 current_user=current_user,
                             )
+                    if summary_record.is_spam:
+                        background_tasks.add_task(
+                            email_service.update_message_labels,
+                            msg_id=source_email.msg_id,
+                            addLabelIds=["SPAM"],
+                            current_user=current_user,
+                        )
                     if summary_record.sender is not None:
                         background_tasks.add_task(
                             database_service.upsert_sender,

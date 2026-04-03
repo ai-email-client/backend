@@ -83,6 +83,16 @@ class DifyService():
                                 req.current_user,
                                 self.db
                             )
+                if dify_res.is_spam:
+                    provider_service.message_modify_label(
+                        MessageModifyLabelRequest(
+                            id=req.msg_id,
+                            addLabelIds=["SPAM"],
+                            removeLabelIds=[]
+                        ),
+                        req.current_user,
+                        self.db
+                    )
             except Exception as label_err:
                 print(f"[Warning] Label sync failed for id {req.id}: {label_err}", flush=True)
 
