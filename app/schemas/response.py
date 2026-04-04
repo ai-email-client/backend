@@ -31,7 +31,7 @@ class EmailAIAnalysisResponse(BaseModel):
     email_category: Optional[str] = None
     date: Optional[str] = None
     time: Optional[str] = None
-    location: Optional[str] = None
+    location: Optional[Dict[str, Any]] | Optional[List[str]] | Optional[str] = None
     instructions: Optional[List[str]] = None
     required_items: Optional[List[str]] = None
     summary: Optional[str] = None
@@ -57,7 +57,7 @@ class OverviewResponse(BaseModel):
     required_items: Optional[List[str]] = None
     date: Optional[str] = None
     time: Optional[str] = None
-    location: Optional[str] = None
+    location: Optional[Dict[str, Any]] | Optional[List[str]] | Optional[str] = None
 
 
 class SpamResponse(BaseModel):

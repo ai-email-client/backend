@@ -99,7 +99,6 @@ async def set_summary(
                         current_user=current_user,
                     )
                 is_spam = "SPAM" in req.email_tags
-                print(f"is_spam: {is_spam}")
                 if is_spam:
                     background_tasks.add_task(
                         email_service.update_message_labels,

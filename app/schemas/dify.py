@@ -5,7 +5,7 @@ from datetime import timezone
 from dateutil import parser
 from dateutil.tz import gettz
 from pydantic import BaseModel, field_validator
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from app.schemas.email import Sender
 
 TZ_INFOS = {
@@ -37,7 +37,7 @@ class DifySummary(BaseModel):
     email_category: Optional[str] = None
     date: Optional[str] = None
     time: Optional[str] = None
-    location: Optional[str] = None
+    location: Optional[Dict[str, Any]] | Optional[List[str]] | Optional[str] = None
     instructions: Optional[List[str]] = None
     required_items: Optional[List[str]] = None
     summary: Optional[str] = None
