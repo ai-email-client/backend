@@ -1,10 +1,8 @@
 import pandas as pd
-import csv
 import os
 import re
 
 def load_test_cases(file_path: str) -> list[tuple]:
-    
     if file_path.lower().endswith('.csv'):
         df = pd.read_csv(file_path)
     elif file_path.lower().endswith(('.xlsx', '.xls')):
@@ -12,40 +10,59 @@ def load_test_cases(file_path: str) -> list[tuple]:
     else:
         raise ValueError(f"ไม่รองรับไฟล์นามสกุลนี้: {file_path} (กรุณาใช้ .csv หรือ .xlsx)")
     
-    test_data = df[['Test Case ID', 'Input Email', 'Expected sender_type', 'Expected email_category', 'Expected Spam','Remark']]
+    test_data = df[[
+        "Test Case ID",
+        "Input Email",
+        "Expected sender_type",
+        "Expected email_category",
+        "Expected Summary",
+        "Expected Importance",
+        "Expected Spam"
+    ]]
     
     return list(test_data.itertuples(index=False, name=None))
 
 def save_result_to_csv(
-        tc_id, input_email, 
-        actual_sender_type, expected_sender_type,
-        actual_email_category, expected_email_category,
-        actual_spam, expected_spam,
-        result,status, error_message="", remark=""
-    ):
+    file_path: str,
+    test_case_id: str,
+    actual_sender_type: str,
+    actual_email_category: str,
+    actual_summary: str,
+    actual_importance: str,
+    actual_spam: str,
+    status: str,
+    error_message: str = ""
+):
+    if file_path.lower().endswith('.csv'):
+        df = pd.read_csv(file_path)
+    else:
+        df = pd.read_excel(file_path)
 
-    file_name = 'test_results_report.csv'
-    path = os.path.join(os.path.dirname(__file__), file_name)
-    file_exists = os.path.isfile(path)
+    new_columns = [
+        "Actual sender_type", "Actual email_category", "Actual Summary", 
+        "Actual Importance", "Actual Spam", "Status", "Error Message"
+    ]
     
-    with open(path, mode='a', newline='', encoding='utf-8-sig') as file:
-        writer = csv.writer(file)
-        
-        if not file_exists:
-            writer.writerow(['Test Case ID', 
-            'Input Email', 
-            'Actual sender_type', 'Expected sender_type', 
-            'Actual email_category', 'Expected email_category', 
-            'Actual Spam', 'Expected Spam', 
-            'Result', 'Status','Error Message', 'Remark'])
-        
-        writer.writerow([
-            tc_id, input_email, 
-            actual_sender_type, expected_sender_type, 
-            actual_email_category, expected_email_category, 
-            actual_spam, expected_spam, 
-            result, status, error_message, remark
-        ])
+    for col in new_columns:
+        if col not in df.columns:
+            df[col] = ""
+            
+        df[col] = df[col].astype('object')
+
+    idx = df.index[df['Test Case ID'] == test_case_id]
+    
+    if not idx.empty:
+        i = idx[0]
+        df.at[i, 'Actual sender_type'] = actual_sender_type
+        df.at[i, 'Actual email_category'] = actual_email_category
+        df.at[i, 'Actual Summary'] = actual_summary
+        df.at[i, 'Actual Importance'] = actual_importance
+        df.at[i, 'Actual Spam'] = actual_spam
+
+    if file_path.lower().endswith('.csv'):
+        df.to_csv(file_path, index=False, encoding='utf-8-sig')
+    else:
+        df.to_excel(file_path, index=False)
 
 def strip_ansi(text: str) -> str:
     return re.sub(r'\x1b\[[0-9;]*m', '', text)

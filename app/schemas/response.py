@@ -53,12 +53,18 @@ class OverviewResponse(BaseModel):
     email_category: str
     summary:        str
     importance:     Importance
+    instructions: Optional[List[str]] = None
+    required_items: Optional[List[str]] = None
+    date: Optional[str] = None
+    time: Optional[str] = None
+    location: Optional[str] = None
+
 
 class SpamResponse(BaseModel):
     msg_id: str
     source_email_id: str
     sender: Sender
-    summary: str
+    summary: str | None = None
     is_spam: bool
     is_threat: bool
     spam_type: str

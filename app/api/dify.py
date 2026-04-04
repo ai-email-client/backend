@@ -49,6 +49,7 @@ class DifyAPI:
                 verify=False,
                 timeout=(1, 500),
             )
+            
             response.raise_for_status()
             return DifySummaryResponse(**response.json())
         except Exception as e:
@@ -63,9 +64,6 @@ class DifyAPI:
         }
 
     def get_summary(self, plain_text: str) -> DifySummaryResponse | None:
-        return self._post(self.config.DIFY_SUMMARY, self._summary_payload(plain_text))
-
-    def test_summary(self, plain_text: str) -> DifySummaryResponse | None:
         return self._post(self.config.DIFY_SUMMARY, self._summary_payload(plain_text))
 
     def get_writter(self, req: WritterRequest) -> DifySummaryResponse | dict:

@@ -57,43 +57,57 @@ class DifySummary(BaseModel):
         if not isinstance(data, str):
             return data
 
-        has_importance_block = re.search(r'(?:\*{0,2})Importance:(?:\*{0,2})', data, re.IGNORECASE)
-
-        if not has_importance_block:
-            return data
-
+        data = re.sub(r'<[/]?(?:bos|eos|s|pad|unk)[^>]*>|<\|.*?\|>', '', data, flags=re.IGNORECASE).strip()
         field_name = info.field_name
+
         if field_name == "summary":
-            data = re.sub(r'^(?:\*{0,2})Summary:(?:\*{0,2})\s*', '', data, flags=re.IGNORECASE).strip()
+            result = None
+            match_json = re.search(r'"summary"\s*:\s*"([^"]+)"', data, re.IGNORECASE)
+            if match_json:
+                result = match_json.group(1).strip()
+            else:
+                match_md = re.search(
+                    r'(?:\*{0,2})Summary:(?:\*{0,2})\s*(.*?)(?=\n+\s*(?:\*{0,2})Importance:|\Z)', 
+                    data, re.DOTALL | re.IGNORECASE
+                )
+                if match_md:
+                    result = match_md.group(1).strip()
 
-            match = re.search(
-                r'^(.*?)(?=\n{1,2}\s*(?:\*{0,2})Importance:(?:\*{0,2}))',
-                data, re.DOTALL | re.IGNORECASE
-            )
-            result = match.group(1).strip() if match else data
-
-            result = re.sub(r'\n{2,}', '\n', result)
-            result = re.sub(r'[ \t]+', ' ', result)
-            return result.strip()
+            if result is not None:
+                result = re.sub(r'\n{2,}', '\n', result)
+                result = re.sub(r'[ \t]+', ' ', result)
+                return result
+                
+            return data
 
         if field_name == "importance":
             imp_dict = {}
+            
+            has_json = re.search(r'"importance"\s*:', data, re.IGNORECASE)
+            has_md = re.search(r'(?:\*{0,2})Importance:(?:\*{0,2})', data, re.IGNORECASE)
 
-            match_level = re.search(
-                r'(?:\*{0,2})Importance:(?:\*{0,2})\s*([A-Za-z]+)',
-                data, re.IGNORECASE
-            )
-            match_reason = re.search(
-                r'(?:\*{0,2})Reason:(?:\*{0,2})\s*(.*?)(?=\n+\s*(?:\*{0,2})[A-Z]|\Z)',
-                data, re.DOTALL | re.IGNORECASE
-            )
+            if has_json:
+                match_level = re.search(r'"level"\s*:\s*"([^"]+)"', data, re.IGNORECASE)
+                match_reason = re.search(r'"reason"\s*:\s*"([^"]+)"', data, re.IGNORECASE)
+                
+                if match_level:
+                    imp_dict['level'] = match_level.group(1).strip().lower()
+                if match_reason:
+                    imp_dict['reason'] = match_reason.group(1).strip()
+                    
+            elif has_md:
+                match_level = re.search(r'(?:\*{0,2})Importance:(?:\*{0,2})\s*([A-Za-z]+)', data, re.IGNORECASE)
+                match_reason = re.search(
+                    r'(?:\*{0,2})Reason:(?:\*{0,2})\s*(.*?)(?=\n+\s*(?:\*{0,2})[A-Z]|\Z)', 
+                    data, re.DOTALL | re.IGNORECASE
+                )
+                
+                if match_level:
+                    imp_dict['level'] = match_level.group(1).strip().lower()
+                if match_reason:
+                    imp_dict['reason'] = match_reason.group(1).strip()
 
-            if match_level:
-                imp_dict['level'] = match_level.group(1).strip().capitalize()
-            if match_reason:
-                imp_dict['reason'] = match_reason.group(1).strip()
-
-            return imp_dict if imp_dict else None
+            return imp_dict if imp_dict else data
 
         return data
 

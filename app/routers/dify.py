@@ -60,6 +60,13 @@ async def set_summary(
                                 addLabelIds=[label.id],
                                 current_user=current_user,
                             )
+                    if summary_record.is_spam:
+                        background_tasks.add_task(
+                            email_service.update_message_labels,
+                            msg_id=source_email.msg_id,
+                            addLabelIds=["SPAM"],
+                            current_user=current_user,
+                        )
                     if summary_record.sender is not None:
                         background_tasks.add_task(
                             database_service.upsert_sender,
@@ -83,6 +90,23 @@ async def set_summary(
                     return {"status": "queued", "msg_id": req.msg_id}
 
             else:
+                labelId = [item for item in req.email_tags if item.startswith("Label_")]
+                if labelId:
+                    background_tasks.add_task(
+                        email_service.update_message_labels,
+                        msg_id=source_email.msg_id,
+                        removeLabelIds=labelId,
+                        current_user=current_user,
+                    )
+                is_spam = "SPAM" in req.email_tags
+                print(f"is_spam: {is_spam}")
+                if is_spam:
+                    background_tasks.add_task(
+                        email_service.update_message_labels,
+                        msg_id=source_email.msg_id,
+                        removeLabelIds=["SPAM"],
+                        current_user=current_user,
+                    )
                 await enqueue_summary(dify_service.send_to_summary, dify_req)
                 return {"status": "queued", "msg_id": req.msg_id}
 
